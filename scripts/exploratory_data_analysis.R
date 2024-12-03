@@ -105,26 +105,7 @@ ggsave(
   height = 6
 )
 
-# Collisions by Hour of the Day
-collisions %>%
-  mutate(HourOfDay = hour(OCC_DATE)) %>%
-  group_by(HourOfDay) %>%
-  summarize(total_collisions = n()) %>%
-  ggplot(aes(x = HourOfDay, y = total_collisions)) +
-  geom_bar(stat = "identity", fill = "darkgreen") +
-  labs(
-    title = "Total Collisions by Hour of the Day",
-    x = "Hour of the Day",
-    y = "Number of Collisions"
-  ) +
-  theme_minimal()
 
-# Save the plot
-ggsave(
-  filename = here("results", "plots", "collisions_by_hour_of_day.png"),
-  width = 8,
-  height = 6
-)
 
 #### Spatial Visualization ####
 
