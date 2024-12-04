@@ -6,30 +6,40 @@ This repository contains all the files, data, and scripts associated with the an
 
 ## File Structure
 
-The repository is structured as follows:
+### **`data/`**
+- **`raw/`**
+  - `collisions.csv`: Raw traffic collision data (2014–2021).
+  - `neighbourhoods.geojson`: Toronto neighborhood boundaries.
 
-- **`data/`**
-  - **`raw_data/`**: Contains the raw data as obtained from the City of Toronto Open Data Portal.
-    - `traffic_collisions_2014_2021.csv`: Raw traffic collision data.
-    - `neighbourhoods.geojson`: Geospatial data defining Toronto neighborhoods.
-  - **`analysis_data/`**: Contains the cleaned and processed datasets used for analysis.
-    - `neighbourhood_yearly_collisions.parquet`: Aggregated collision data by neighborhood and year.
-- **`scripts/`**: Contains the R scripts used to download, clean, and process data.
-  - `data_download.R`: Script for downloading raw data.
-  - `data_cleaning.R`: Script for cleaning and preparing the raw data.
-  - `data_analysis.R`: Script for data analysis and visualization.
-- **`model/`**: Contains fitted models and related outputs.
-  - `model_fitting.R`: Script for fitting the Negative Binomial regression model.
-  - `nb_model.rds`: Saved Negative Binomial regression model object.
-  - `cv_model.rds`: Saved cross-validation model results.
-- **`paper/`**: Contains the files used to generate the research paper.
-  - `paper.qmd`: The Quarto document of the paper.
-  - `references.bib`: Bibliography file with all references.
-  - `paper.pdf`: The final rendered PDF of the paper.
-- **`other/`**: Contains additional resources and documentation.
-  - **`literature/`**: Relevant literature and articles.
-  - `appendix.qmd`: Appendix with supplementary analyses.
-  - `llm_usage.txt`: Documentation of interactions with language models.
+- **`processed/`**
+  - `collisions_clean.csv`: Cleaned and processed traffic collision data.
+  - `neighbourhood_yearly_collisions.csv`: Aggregated yearly collision data by neighborhood.
+
+### **`scripts/`**
+- `data_cleaning.R`: Cleans and preprocesses raw traffic collision data.
+- `model_fitting.R`: Fits the Negative Binomial regression model and saves outputs.
+- `visualizations.R`: Creates maps and visualizations for temporal and spatial analyses.
+- `eda.R`: Performs exploratory data analysis (EDA) of collision data.
+- `simulation.R`: Simulates datasets for testing and validation.
+
+### **`paper/`**
+- `paper.qmd`: Quarto file containing the final analysis, results, and discussion.
+- `references.bib`: Bibliography file with references for data, software, and methodologies.
+- `paper.pdf`: Rendered PDF of the final paper.
+
+### **`models/`**
+- `nb_model.RDS`: Saved Negative Binomial model object for reproducibility.
+- `cv_results.RDS`: Cross-validation results from the model.
+
+### **`docs/`**
+- `README.md`: Documentation for repository usage and structure.
+
+### **`other/`**
+- **`llm_usage/`**
+  - `llm_usage.txt`: Logs of interactions with large language models (LLMs).
+
+### **`results/`**
+- Contains all the output of models
 
 ## Statement on LLM Usage
 
