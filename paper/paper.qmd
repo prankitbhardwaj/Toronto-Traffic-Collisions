@@ -55,10 +55,6 @@ By integrating spatial and temporal analyses, our study provides a comprehensive
 The remainder of this paper is organized as follows: The Data section describes the datasets used, detailing the variables of interest and data preparation steps, including visualizations that illustrate key patterns. The Methodology section outlines the statistical models and geospatial techniques employed. The Results section presents the findings of our analyses, and the Discussion interprets these results in the context of existing literature and policy implications. Finally, the Conclusion summarizes the main contributions and suggests avenues for future research.
 
 
-
-
-
-
 # Data {#sec-data}
 
 ## **Data Sources**
@@ -67,7 +63,7 @@ Our analysis utilizes two primary datasets:
 
 1. **Traffic Collision Data**: Detailed records of reported traffic collisions in Toronto from January 2014 to December 2021, obtained from the **City of Toronto's Open Data Portal** (City of Toronto 2022a). The dataset includes information on collision dates, times, locations, severities, and parties involved.
 
-   - **Data Access**: [Toronto Traffic Collisions Data](https://www.toronto.ca/city-government/data-research-maps/open-data/open-data-catalogue/)
+   - **Data Access**: [Toronto Traffic Collisions Data](https://open.toronto.ca/dataset/police-annual-statistical-report-traffic-collisions/)
 
 2. **Toronto Neighborhood Boundaries**: Geospatial data defining the boundaries of Toronto's 140 neighborhoods, sourced from the **City of Toronto's Open Data Portal** (City of Toronto 2022b).
 
@@ -180,6 +176,7 @@ collisions_clean <- collisions_sf %>%
 # Save cleaned data
 write_csv(collisions_clean, here("data", "analysis_data", "collisions_clean.csv"))
 ```
+
 ## **Descriptive Analysis and Visualizations**
 
 ### **Temporal Trends**
@@ -433,13 +430,13 @@ Let:
 We assume $Y_{it}$ follows a Negative Binomial distribution:
 
 
-$Y_{it} \sim \text{NegBin}(\mu_{it}, \theta)$
+\[$Y_{it} \sim \text{NegBin}(\mu_{it}, \theta)$\]
 
 
 The expected collision count $\mu_{it}$ is modeled using a log-linear function:
 
 
-$\log(\mu_{it}) = \beta_0 + \beta_1 \text{Year}_t + \beta_2 \text{PostVisionZero}_t + \beta_3 \text{Neighborhood}_i + \beta_4 \text{InjuryRate}_{it} + \beta_5 \text{FatalityRate}_{it}$
+\[$\log(\mu_{it}) = \beta_0 + \beta_1 \text{Year}_t + \beta_2 \text{PostVisionZero}_t + \beta_3 \text{Neighborhood}_i + \beta_4 \text{InjuryRate}_{it} + \beta_5 \text{FatalityRate}_{it}$\]
 
 
 ### Variables Definition
@@ -497,10 +494,10 @@ The model was implemented using the `glm.nb()` function from the `MASS` package 
    We calculated the injury and fatality rates for each neighborhood and year:
 
 
-   $\text{InjuryRate}_{it} = \frac{\text{injuries}_{it}}{\text{total\_collisions}_{it}}$
+\[$\text{InjuryRate}_{it} = \frac{\text{injuries}_{it}}{\text{total\_collisions}_{it}}$\]
 
   
-   $\text{FatalityRate}_{it} = \frac{\text{fatalities}_{it}}{\text{total\_collisions}_{it}}$
+\[$\text{FatalityRate}_{it} = \frac{\text{fatalities}_{it}}{\text{total\_collisions}_{it}}$\]
 
 ```{r data-preparation}
 #| echo: false
@@ -615,7 +612,7 @@ A dispersion parameter close to 1 indicates that overdispersion is adequately ac
 
 We plotted the Pearson residuals against the fitted values to detect any systematic patterns.
 
-```{r residual-plot, fig.cap="Figure 1: Residuals vs. Fitted Values"}
+```{r residual-plot, fig.cap="Residuals vs. Fitted Values"}
 #| echo: false
 # Plot residuals vs. fitted values
 residuals <- residuals(nb_model, type = "pearson")
