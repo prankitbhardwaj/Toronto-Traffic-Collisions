@@ -10,56 +10,6 @@
   }
   
   
-@Article{thereferencecanbewhatever,
-    title = {Welcome to the {tidyverse}},
-    author = {Hadley Wickham and Mara Averick and Jennifer Bryan and Winston Chang and Lucy D'Agostino McGowan and Romain François and Garrett Grolemund and Alex Hayes and Lionel Henry and Jim Hester and Max Kuhn and Thomas Lin Pedersen and Evan Miller and Stephan Milton Bache and Kirill Müller and Jeroen Ooms and David Robinson and Dana Paige Seidel and Vitalie Spinu and Kohske Takahashi and Davis Vaughan and Claus Wilke and Kara Woo and Hiroaki Yutani},
-    year = {2019},
-    journal = {Journal of Open Source Software},
-    volume = {4},
-    number = {43},
-    pages = {1686},
-    doi = {10.21105/joss.01686},
-  }  
-  
-  
-@Manual{citeLahman,
-    title = {{Lahman: Sean `Lahman' Baseball Database}},
-    author = {Michael Friendly and Chris Dalzell and Martin Monkman and Dennis Murphy},
-    year = {2020},
-    note = {R package version 8.0-0},
-    url = {https://CRAN.R-project.org/package=Lahman},
-  }  
-  
-  
-@article{gebru2021datasheets,
-  title={Datasheets for datasets},
-  author={Gebru, Timnit and Morgenstern, Jamie and Vecchione, Briana and Vaughan, Jennifer Wortman and Wallach, Hanna and Iii, Hal Daum{\'e} and Crawford, Kate},
-  journal={Communications of the ACM},
-  volume={64},
-  number={12},
-  pages={86--92},
-  year={2021},
-  publisher={ACM New York, NY, USA}
-}
-
-@Misc{rstanarm,
-    title = {{rstanarm: {Bayesian} applied regression modeling via {Stan}}},
-    author = {Ben Goodrich and Jonah Gabry and Imad Ali and Sam Brilleman},
-    note = {R package version 2.21.3},
-    year = {2022},
-    url = {https://mc-stan.org/rstanarm/},
-  }
-  
-@Manual{palmerpenguins,
-    title = {{palmerpenguins: Palmer Archipelago (Antarctica) penguin data}},
-    author = {Allison Marie Horst and Alison Presmanes Hill and Kristen B Gorman},
-    year = {2020},
-    note = {R package version 0.1.0},
-    doi = {10.5281/zenodo.3960218},
-    url = {https://allisonhorst.github.io/palmerpenguins/},
-  }
-  
-  
 @book{tellingstories,
     title = {Telling Stories with Data},
     author = {Rohan Alexander},
@@ -69,11 +19,95 @@
   }  
   
   
+@misc{toronto-opendata,
+  title        = {Open Data Portal},
+  author       = {{City of Toronto}},
+  howpublished = {\url{https://open.toronto.ca/}},
+  note         = {Accessed: 2023-10-01}
+}
 
-@Manual{shelter,
-    title = {Deaths of Shelter Residents},
-    author = {{Toronto Shelter & Support Services}},
-    year = {2024},
-    note = {As accessed 2024-10-02.},
-    url = {https://open.toronto.ca/dataset/deaths-of-shelter-residents/},
-  }  
+@manual{R-base,
+  title        = {R: A Language and Environment for Statistical Computing},
+  author       = {{R Core Team}},
+  organization = {R Foundation for Statistical Computing},
+  address      = {Vienna, Austria},
+  year         = {2021},
+  url          = {https://www.R-project.org/}
+}
+
+@book{MASS,
+  title     = {Modern Applied Statistics with S},
+  author    = {Venables, W. N. and Ripley, B. D.},
+  edition   = {Fourth},
+  publisher = {Springer},
+  year      = {2002},
+  doi       = {10.1007/978-0-387-21706-2},
+  url       = {https://doi.org/10.1007/978-0-387-21706-2}
+}
+
+@article{tidyverse,
+  title   = {Welcome to the tidyverse},
+  author  = {Wickham, Hadley and Averick, Mara and Bryan, Jennifer and Chang, Winston and McGowan, Lucy D'Agostino and François, Romain and Grolemund, Garrett and Hayes, Alex and Henry, Lionel and Hester, Jim and Kuhn, Max and Pedersen, Thomas L. and Miller, Evan and Bache, Stephan M. and Müller, Kirill and Ooms, Jeroen and Robinson, David and Seidel, Dana and Spinu, Vitalie and Takahashi, Kohske and Vaughan, Davis and Wilke, Claus and Woo, Kara and Yutani, Hiroaki},
+  journal = {Journal of Open Source Software},
+  year    = {2019},
+  volume  = {4},
+  number  = {43},
+  pages   = {1686},
+  doi     = {10.21105/joss.01686},
+  url     = {https://doi.org/10.21105/joss.01686}
+}
+
+@article{caret,
+  title   = {Building Predictive Models in {R} Using the \texttt{caret} Package},
+  author  = {Kuhn, Max},
+  journal = {Journal of Statistical Software},
+  year    = {2008},
+  volume  = {28},
+  number  = {5},
+  pages   = {1--26},
+  doi     = {10.18637/jss.v028.i05},
+  url     = {https://doi.org/10.18637/jss.v028.i05}
+}
+
+@book{ggplot2,
+  title     = {ggplot2: Elegant Graphics for Data Analysis},
+  author    = {Wickham, Hadley},
+  publisher = {Springer-Verlag},
+  address   = {New York},
+  year      = {2016},
+  isbn      = {978-3-319-24277-4},
+  doi       = {10.1007/978-3-319-24277-4},
+  url       = {https://ggplot2.tidyverse.org}
+}
+
+@manual{broom,
+  title        = {broom: Convert Statistical Objects into Tidy Tibbles},
+  author       = {Robinson, David and Hayes, Alex},
+  year         = {2022},
+  note         = {R package version 0.7.10},
+  url          = {https://CRAN.R-project.org/package=broom}
+}
+
+@manual{kableExtra,
+  title        = {kableExtra: Construct Complex Table with 'kable' and Pipe Syntax},
+  author       = {Zhu, Hao},
+  year         = {2021},
+  note         = {R package version 1.3.4},
+  url          = {https://CRAN.R-project.org/package=kableExtra}
+}
+
+@manual{here,
+  title        = {here: A Simpler Way to Find Your Files},
+  author       = {Müller, Kirill},
+  year         = {2020},
+  note         = {R package version 1.0.1},
+  url          = {https://CRAN.R-project.org/package=here}
+}
+
+@manual{sf,
+  title        = {sf: Simple Features for R},
+  author       = {Pebesma, Edzer},
+  year         = {2018},
+  note         = {R package version 1.0-0},
+  url          = {https://CRAN.R-project.org/package=sf}
+}

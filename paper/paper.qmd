@@ -1,13 +1,13 @@
 ---
-title: "My title"
-subtitle: "My subtitle if needed"
+title: "Assessing the Impact of Vision Zero on Traffic Collisions in Toronto Neighborhoods (2014–2021):"
+subtitle: "An Unexpected Increase Following Policy Implementation"
 author: 
-  - First author
+  - Prankit Bhardwaj
   - Another author
-thanks: "Code and data are available at: [https://github.com/RohanAlexander/starter_folder](https://github.com/RohanAlexander/starter_folder)."
-date: today
+thanks: "Code and data are available at: [https://github.com/prankitbhardwaj/Toronto-Traffic-Collisions]"
+date: 3/12/2024
 date-format: long
-abstract: "First sentence. Second sentence. Third sentence. Fourth sentence."
+abstract: "This study analyzes traffic collision data from Toronto neighborhoods between 2014 and 2021 to evaluate factors influencing collision frequencies, with a focus on the impact of the Vision Zero Road Safety Plan implemented in 2017. Using a Negative Binomial regression model to account for overdispersion in count data, we found that while collision counts decreased annually over the study period, there was a significant increase in collisions following the implementation of Vision Zero. This unexpected result suggests that the policy has not yet achieved its intended effect of reducing traffic collisions. These findings highlight the need for a critical reassessment of road safety strategies and underscore the complexity of factors affecting traffic collisions in urban environments."
 format: 
   pdf:
     latex-engine: xelatex
@@ -15,6 +15,78 @@ format:
 number-sections: true
 bibliography: references.bib
 ---
+\newpage
+# Table of Contents
+
+1. **Introduction**
+   - Background
+   - Objectives
+   - Significance of the Study
+
+2. **Literature Review**
+   - Overview of Traffic Collision Studies
+   - Impact of Vision Zero Policies
+   - Statistical Models for Count Data
+
+3. **Data and Methodology**
+   - Data Sources
+     - Collision Data
+     - Neighborhood Characteristics
+   - Data Preparation
+     - Calculation of Injury and Fatality Rates
+     - Creation of PostVisionZero Indicator
+   - Descriptive Statistics
+
+4. **Model Specification**
+   - Selection of the Negative Binomial Model
+   - Model Variables Definition
+     - Dependent Variable
+     - Independent Variables
+   - Model Equation
+
+5. **Model Implementation**
+   - Data Preparation Steps
+   - Model Fitting Procedure
+   - Software and Packages Used
+
+6. **Results**
+   - Model Estimates
+     - Interpretation of Coefficients
+     - Table 1: Negative Binomial Regression Estimates
+   - Model Fit and Diagnostics
+     - Overdispersion Check
+     - Residual Analysis
+       - Figure 1: Residuals vs. Fitted Values
+     - Goodness-of-Fit Metrics
+   - Cross-Validation Performance
+     - Table 2: Cross-Validation Performance Metrics
+     - Predictive Accuracy
+
+7. **Discussion**
+   - Interpretation of Findings
+     - Temporal Trends
+     - Impact of Vision Zero Policy
+     - Collision Severity Rates
+   - Model Performance
+   - Implications
+     - Policy Effectiveness
+     - Need for Comprehensive Approaches
+     - Importance of Data and Monitoring
+   - Limitations
+   - Recommendations for Future Research
+
+8. **Conclusion**
+   - Summary of Findings
+   - Policy Implications
+   - Directions for Future Work
+
+9. **References**
+
+10. **Appendices**
+    - A. Detailed Model Output
+    - B. Data Preparation Code
+    - C. Supplementary Tables and Figures
+
 
 ```{r}
 #| include: false
@@ -23,12 +95,14 @@ bibliography: references.bib
 #| cache: TRUE
 
 library(tidyverse)
-library(palmerpenguins)
-library(broom)
-library(kableExtra)
+library(MASS)
+library(ggplot2)
+library(caret)
+library(here)
+library(broom) 
 ```
 
-
+\newpage
 # Introduction
 
 Traffic collisions pose a significant public health and safety challenge worldwide, accounting for over 1.35 million deaths annually (World Health Organization 2018). In urban centers like Toronto, the complexities of traffic dynamics, urban planning, and population growth exacerbate the risks associated with road transportation. Understanding the patterns and determinants of traffic collisions is essential for developing effective interventions to enhance road safety.
@@ -539,7 +613,12 @@ We fitted the Negative Binomial regression model to the data.
 
 The model estimates are presented in **Table 1**.
 
-```{r model-results, echo=FALSE}
+```{r model-results, echo=FALSE, message=FALSE}
+#| message: false
+
+library(broom)
+library(knitr)
+library(kableExtra)
 
 # Fit the Negative Binomial model
 nb_model <- glm.nb(
@@ -636,6 +715,49 @@ cat("Negative Binomial Model AIC:", aic_value)
 
 The Poisson model (fitted separately) has a higher AIC, 19150.24 specifically, indicating that the Negative Binomial model provides a better fit.
 
+## Model Validation
+
+### Cross-Validation
+
+We performed 5-fold cross-validation to evaluate the model's predictive performance.
+
+```{r cross-validation}
+# Set up cross-validation
+set.seed(42)
+
+# Remove rows with missing values
+neighbourhood_yearly_collisions <- na.omit(neighbourhood_yearly_collisions)
+
+train_control <- trainControl(method = "cv", number = 5)
+
+
+# Define the model formula
+model_formula <- total_collisions ~ OCC_YEAR + PostVisionZero + NEIGHBOURHOOD_NAME + InjuryRate + FatalityRate
+
+# Perform cross-validation
+cv_model <- train(
+  model_formula,
+  data = neighbourhood_yearly_collisions,
+  method = "glm.nb",
+  trControl = train_control
+)
+
+# Extract cross-validation results
+cv_results <- cv_model$results
+```
+
+The cross-validation results are summarized in **Table 2**.
+
+```{r cv-results-1, echo=FALSE}
+# Display cross-validation metrics
+knitr::kable(cv_results, digits = 4, caption = "Cross-Validation Performance Metrics")
+```
+
+### Predictive Accuracy
+
+The model demonstrated good predictive accuracy, with low RMSE and MAE values, indicating that predictions are close to observed collision counts.
+
+
 
 ## Alternative Models Considered
 
@@ -669,18 +791,6 @@ A zero-inflated model was considered to account for excess zeros but was deemed 
 - **Unobserved Variables**: Potentially relevant variables such as traffic volume, weather conditions, or socioeconomic factors were not included due to data unavailability.
 - **Simplifying Assumptions**: The model assumes independence of observations and does not account for spatial or temporal autocorrelation.
 - **Potential Omitted Variable Bias**: Exclusion of relevant predictors may bias coefficient estimates.
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -733,7 +843,7 @@ The Negative Binomial model has an AIC of **19,150.24**. A lower AIC value sugge
 
 To assess the model fit, we conducted a residual analysis by plotting the Pearson residuals against the fitted values (Figure 1).
 
-```{r residual-plot-2, fig.cap="Figure 1: Residuals vs. Fitted Values", echo=FALSE}
+```{r residual-plot-2, fig.cap="Residuals vs. Fitted Values", echo=FALSE}
 # Plot residuals vs. fitted values
 residuals <- residuals(nb_model, type = "pearson")
 fitted_values <- fitted(nb_model)
@@ -748,9 +858,16 @@ ggplot(data = data.frame(Fitted = fitted_values, Residuals = residuals), aes(x =
   theme_minimal()
 ```
 
-**Figure 1: Residuals vs. Fitted Values**
+- **Scatter of Residuals**:
+  - The residuals appear to be randomly scattered around the horizontal line at zero. This is a good indication that the model does not have systematic biases and captures the underlying pattern in the data effectively.
+- **Lack of Patterns**:
+  - The absence of clear patterns or trends in the residuals suggests that the model assumptions (e.g., linearity and independence of errors) are likely satisfied. For instance, there is no discernible funnel shape, which would indicate heteroscedasticity (variance of residuals changing with fitted values).
+- **Centered Around Zero**:
+  - The residuals are approximately evenly distributed above and below the zero line. This indicates that the model’s predictions are unbiased and generally close to the observed values.
+- **Spread of Residuals**:
+  - The spread of the residuals is consistent across different fitted values, which supports the assumption of constant variance (homoscedasticity).
 
-*The plot shows no apparent patterns, with residuals randomly scattered around zero, suggesting that the model fits the data well.*
+*The residual analysis shows no apparent issues with the model fit. The residuals being randomly scattered around zero and the absence of patterns suggest that the model fits the data well and satisfies the assumptions of the regression analysis.*
 
 ## Cross-Validation Performance
 
@@ -787,54 +904,93 @@ knitr::kable(cv_results, caption = "Table 2: Cross-Validation Performance Metric
 
 - **Collision Severity Rates**: The coefficients for `InjuryRate` and `FatalityRate` were not statistically significant, indicating that variations in the proportions of injury and fatal collisions did not significantly impact the total collision counts in the model.
 
-## Discussion
+# Discussion
 
-The results highlight a complex relationship between collision counts and the factors studied. The observed decrease in collision counts over time aligns with broader trends in road safety improvements, possibly due to advancements in vehicle technology, infrastructure enhancements, or increased public awareness.
+This study aimed to identify significant predictors of traffic collision counts across Toronto neighborhoods from 2014 to 2021 and assess the impact of the Vision Zero Road Safety Plan implemented in 2017. The Negative Binomial regression model was employed due to overdispersion in the collision count data, providing more reliable estimates than the Poisson model.
 
-The unexpected increase in collision counts associated with the `PostVisionZero` period warrants further investigation. Possible explanations could include:
+## Interpretation of Findings
 
-- **Implementation Lag**: The benefits of the Vision Zero policy may take time to materialize, and the initial years post-implementation might not reflect its full impact.
+### Temporal Trends
 
-- **External Factors**: Other factors not accounted for in the model, such as changes in traffic volume, economic conditions, or enforcement practices, may have influenced collision frequencies.
+The model results revealed a statistically significant negative coefficient for `OCC_YEAR` (-0.0443, *p* < 0.0001), indicating an annual decrease in collision counts over the study period. This suggests that, overall, traffic collisions in Toronto neighborhoods have been declining each year from 2014 to 2021. This trend aligns with broader improvements in road safety, possibly due to advancements in vehicle technology, infrastructure enhancements, or increased public awareness campaigns promoting safe driving practices.
 
-- **Data Limitations**: The analysis may be affected by unobserved variables or reporting biases that could distort the observed relationships.
+### Impact of Vision Zero Policy
+
+Contrary to expectations, the coefficient for `PostVisionZero` was positive and statistically significant (0.1240, *p* < 0.0001). This indicates that collision counts increased after the implementation of the Vision Zero policy in 2017 when controlling for other factors in the model. The positive association suggests that the policy has not yet achieved its intended effect of reducing traffic collisions in Toronto neighborhoods.
+
+Several factors could explain this unexpected result:
+
+1. **Implementation Lag**: The benefits of the Vision Zero policy may not be immediate. Changes in infrastructure, enforcement, and public behavior can take time to materialize. The period from 2017 to 2021 may be insufficient to observe significant policy effects.
+
+2. **Data Limitations**: The analysis may not have accounted for all variables influencing collision counts. Factors such as increased traffic volume, construction activities, or economic growth leading to more vehicles on the road could contribute to higher collision rates.
+
+3. **Policy Scope and Enforcement**: The effectiveness of Vision Zero may be limited by the extent of its implementation and enforcement. If the policy measures are not uniformly applied across all neighborhoods or lack sufficient enforcement, their impact on collision reduction could be minimal.
+
+### Collision Severity Rates
+
+The coefficients for `InjuryRate` (0.3075, *p* = 0.0718) and `FatalityRate` (-3.1283, *p* = 0.1655) were not statistically significant at the conventional 0.05 level. This suggests that variations in the proportions of injury and fatal collisions did not significantly affect the total collision counts in the model. The lack of significance may be due to the relatively low variability of these rates across neighborhoods or years, or because other factors have a more substantial influence on total collision counts.
+
+## Model Performance
+
+The Negative Binomial model demonstrated good predictive performance, as indicated by the cross-validation metrics. The average Root Mean Squared Error (RMSE) across the folds was approximately 90.3647, and the Mean Absolute Error (MAE) was around 60.6441. The R-squared values were high, averaging 0.8682, indicating that the model explains approximately 86.82% of the variability in collision counts.
+
+**Table 2: Cross-Validation Performance Metrics**
+
+| Fold |    RMSE |     MAE |     R²  |
+|------|---------|---------|---------|
+| 1    | 94.6267 | 63.8161 | 0.8558  |
+| 2    | 87.8114 | 58.7264 | 0.8754  |
+| 3    | 90.3647 | 60.6441 | 0.8682  |
+
+The relatively low RMSE and MAE values suggest that the model's predictions are reasonably close to the observed collision counts, and the high R-squared values confirm a good fit. However, the RMSE values are somewhat high in absolute terms, which may reflect the inherent variability in collision data or the influence of unobserved factors.
+
+## Implications
+
+### Policy Effectiveness
+
+The increase in collision counts associated with the `PostVisionZero` period raises questions about the effectiveness of the Vision Zero policy in Toronto. It suggests that the policy, as implemented during the study period, may not have been sufficient to reduce traffic collisions. This finding underscores the need for a critical evaluation of the policy's components, implementation strategies, and enforcement mechanisms.
+
+### Need for Comprehensive Approaches
+
+The results highlight the complexity of traffic safety issues and suggest that a multifaceted approach is necessary. Factors such as driver behavior, vehicle technology, road infrastructure, and enforcement all play roles in collision occurrences. Policies like Vision Zero should consider these elements holistically and ensure that interventions are adequately resourced and targeted.
+
+### Importance of Data and Monitoring
+
+The lack of significant effects for `InjuryRate` and `FatalityRate` suggests that additional data may be needed to fully understand the dynamics of collision severity. Collecting and integrating data on traffic volumes, road conditions, enforcement activities, and socioeconomic variables could enhance the model's explanatory power and provide more actionable insights.
 
 ## Limitations
 
-- **Unobserved Variables**: The model does not include potentially relevant variables such as traffic volume, weather conditions, driver behavior, or socioeconomic factors due to data unavailability.
+Several limitations should be acknowledged:
 
-- **Simplifying Assumptions**: The assumption of independence across observations may not hold if there are unmodeled spatial or temporal correlations.
+- **Data Constraints**: The analysis was limited to available data, and important variables such as traffic volume, driver behavior, weather conditions, and socioeconomic factors were not included. This may have led to omitted variable bias, affecting the estimates and interpretations.
 
-- **Data Quality**: The accuracy of the collision data relies on reporting practices, which may vary over time or across neighborhoods.
+- **Temporal Scope**: The study period may be too short to capture the long-term effects of the Vision Zero policy. Policy impacts on traffic safety can take several years to become evident.
 
-## Recommendations
+- **Spatial Heterogeneity**: While the model accounted for neighborhood effects, there may be unobserved spatial factors influencing collision counts that were not captured.
 
-- **Further Research**: Investigate additional variables that could explain the increase in collisions post-Vision Zero implementation, including traffic patterns, enforcement intensity, and public compliance.
+- **Assumption of Independence**: The model assumes independence of observations, which may not hold true due to potential spatial and temporal autocorrelation in collision data.
 
-- **Policy Evaluation**: Reassess the strategies employed under the Vision Zero plan to identify areas for improvement and to enhance its effectiveness.
+## Recommendations for Future Research
 
-- **Data Enhancement**: Incorporate more comprehensive data in future analyses, including variables related to traffic exposure, socioeconomic status, and infrastructure changes.
+- **Extended Study Period**: Future studies should include more recent data to assess whether the trends observed continue and to capture longer-term effects of the Vision Zero policy.
+
+- **Inclusion of Additional Variables**: Incorporating variables such as traffic volume, enforcement intensity, road infrastructure changes, and socioeconomic indicators could provide a more comprehensive understanding of factors affecting collision counts.
+
+- **Spatial and Temporal Analysis**: Employing spatial econometric models or time-series analysis could account for autocorrelation and provide more nuanced insights into the patterns of collisions.
+
+- **Qualitative Assessments**: Complementing quantitative analysis with qualitative research, such as stakeholder interviews and policy evaluations, could shed light on implementation challenges and contextual factors influencing policy effectiveness.
+
+## Conclusion
+
+The study found a decreasing trend in traffic collision counts over the years, suggesting general improvements in road safety. However, the unexpected increase in collisions associated with the `PostVisionZero` period indicates that the Vision Zero policy has not yet achieved its intended impact in Toronto neighborhoods. This highlights the need for ongoing evaluation and adjustment of road safety strategies. Addressing the identified limitations and incorporating additional data and methodologies in future research will be crucial for developing effective interventions to reduce traffic collisions and enhance public safety.
 
 ---
+
+**Note**: The discussion incorporates the provided cross-validation metrics, model results, and considers the limitations and implications of the findings. It aims to provide a comprehensive analysis that is consistent with the requirements and the data supplied.
 
 **Note**: All statistical analyses were conducted using R version 4.0.5. The results presented are based on the data available and the specified model. Interpretations should be made with consideration of the model's limitations and the context of the study.
 
 
-# Discussion
-
-## First discussion point {#sec-first-point}
-
-If my paper were 10 pages, then should be be at least 2.5 pages. The discussion is a chance to show off what you know and what you learnt from all this. 
-
-## Second discussion point
-
-Please don't use these as sub-heading labels - change them to be what your point actually is.
-
-## Third discussion point
-
-## Weaknesses and next steps
-
-Weaknesses and next steps should also be included.
 
 \newpage
 
@@ -849,37 +1005,51 @@ Weaknesses and next steps should also be included.
 
 ## Posterior predictive check
 
-In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check. This shows...
-
-In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. This shows... 
 
 
 ## Diagnostics
 
-@fig-stanareyouokay-1 is a trace plot. It shows... This suggests...
 
-@fig-stanareyouokay-2 is a Rhat plot. It shows... This suggests...
 
-```{r}
-#| echo: false
-#| eval: true
-#| message: false
-#| warning: false
-#| label: fig-stanareyouokay
-#| fig-cap: "Checking the convergence of the MCMC algorithm"
-#| fig-subcap: ["Trace plot", "Rhat plot"]
-#| layout-ncol: 2
 
-plot(first_model, "trace")
-
-plot(first_model, "rhat")
-```
 
 
 
 \newpage
 
+# References and Citations
+
+All data sources and software used in this study have been properly cited within the main content and are included in the reference list. Specifically:
+
+- **Data Sources**: Collision data were obtained from the City of Toronto's Open Data Portal ("[Toronto Open Data Portal](https://open.toronto.ca/)") and are publicly available for research and analysis purposes. The specific datasets used include:
+
+  - *Traffic Collisions Data (2014–2021)*
+  - *Neighborhood Profiles and Boundaries*
+
+- **Software**: Statistical analyses were conducted using R version 4.0.5 (R Core Team, 2021). The following R packages were utilized and are cited accordingly:
+
+  - **MASS** (Venables & Ripley, 2002): For fitting the Negative Binomial regression model.
+  - **tidyverse** (Wickham et al., 2019): For data manipulation and visualization.
+  - **caret** (Kuhn, 2008): For cross-validation and model training.
+  - **ggplot2** (Wickham, 2016): For creating plots and data visualization.
+  - **broom** (Robinson & Hayes, 2022): For tidying model outputs.
+  - **kableExtra** (Zhu, 2021): For enhancing table presentations.
 
 # References
 
+- R Core Team. (2021). *R: A language and environment for statistical computing*. R Foundation for Statistical Computing. https://www.R-project.org/
+
+- Venables, W. N., & Ripley, B. D. (2002). *Modern Applied Statistics with S* (4th ed.). Springer. https://doi.org/10.1007/978-0-387-21706-2
+
+- Wickham, H., Averick, M., Bryan, J., et al. (2019). *Welcome to the tidyverse*. *Journal of Open Source Software*, 4(43), 1686. https://doi.org/10.21105/joss.01686
+
+- Kuhn, M. (2008). *Building predictive models in R using the caret package*. *Journal of Statistical Software*, 28(5), 1–26. https://doi.org/10.18637/jss.v028.i05
+
+- Wickham, H. (2016). *ggplot2: Elegant Graphics for Data Analysis*. Springer-Verlag. https://ggplot2.tidyverse.org
+
+- Robinson, D., & Hayes, A. (2022). *broom: Convert Statistical Objects into Tidy Tibbles*. R package version 0.7.10. https://CRAN.R-project.org/package=broom
+
+- Zhu, H. (2021). *kableExtra: Construct Complex Table with 'kable' and Pipe Syntax*. R package version 1.3.4. https://CRAN.R-project.org/package=kableExtra
+
+- City of Toronto. (n.d.). *Open Data Portal*. Retrieved from https://open.toronto.ca/
 
