@@ -996,20 +996,254 @@ The study found a decreasing trend in traffic collision counts over the years, s
 
 \appendix
 
-# Appendix {-}
+# Appendix
 
+## Additional Data Details
 
-# Additional data details
+### Data Collection Methodology
 
-# Model details {#sec-model-details}
+#### Data Sources
 
-## Posterior predictive check
+The primary data source for this study is the City of Toronto's Open Data Portal [@toronto-opendata], which provides publicly accessible datasets related to traffic collisions within the city. The specific datasets utilized include:
 
+- **Traffic Collision Data (2014–2021)**: Contains detailed records of reported traffic collisions, including date, time, location, collision severity, and parties involved.
+- **Neighborhood Boundaries**: Geospatial data defining the boundaries of Toronto's 140 neighborhoods, used to aggregate collision data by neighborhood.
 
+#### Data Recording Processes
 
-## Diagnostics
+Traffic collision data are collected by the Toronto Police Service (TPS) through standardized reporting procedures:
 
+- **At-Scene Reporting**: Police officers attend collision scenes and collect information using standardized collision reporting forms, capturing details such as collision type, contributing factors, environmental conditions, and involved parties.
+- **Self-Reporting Centers**: For minor collisions without injuries, parties may report incidents at Collision Reporting Centers, where they complete standardized forms under the guidance of staff.
 
+#### Variables and Definitions
+
+Key variables used in the analysis include:
+
+- **OCC_YEAR**: Year of collision occurrence.
+- **NEIGHBOURHOOD_NAME**: Name of the neighborhood where the collision occurred.
+- **total_collisions**: Total number of collisions in a neighborhood per year.
+- **injuries**: Number of collisions involving injuries.
+- **fatalities**: Number of collisions involving fatalities.
+- **InjuryRate**: Proportion of collisions resulting in injuries (injuries / total_collisions).
+- **FatalityRate**: Proportion of collisions resulting in fatalities (fatalities / total_collisions).
+- **PostVisionZero**: Indicator variable equal to 1 for years 2017 and onwards, 0 otherwise.
+
+### Data Quality and Limitations
+
+#### Sampling Frame and Population
+
+- **Population**: All traffic collisions occurring within the City of Toronto from 2014 to 2021.
+- **Sampling Frame**: Collisions reported to and recorded by the Toronto Police Service.
+- **Sample**: The dataset includes all reported collisions within the study period, totaling over 200,000 incidents.
+
+#### Coverage and Reporting Bias
+
+- **Under-Reporting of Minor Collisions**: Minor collisions, especially those without injuries or significant property damage, may go unreported, leading to under-coverage in the dataset.
+- **Selective Reporting**: Certain demographics or communities may be less likely to report collisions due to factors like distrust of authorities or language barriers.
+- **Temporal Reporting Bias**: Changes in reporting practices over time (e.g., introduction of online reporting) may affect the consistency of data collection.
+
+#### Missing Data and Non-Response
+
+- **Extent of Missing Data**: Some records have missing values in key variables, such as collision severity or location.
+- **Handling Missing Data**: Records with missing critical information were excluded from the analysis. Variables with minimal missingness were imputed using mean or mode imputation as appropriate.
+
+#### Measurement Error
+
+- **Accuracy of Recorded Information**: Errors may occur during data entry or due to inaccuracies in witness accounts.
+- **Location Precision**: Collision locations are sometimes recorded at the nearest intersection, which may introduce spatial inaccuracies at the neighborhood level.
+
+## Observational Data Analysis
+
+### In-Depth Exploration of Data Limitations
+
+#### Bias in Reporting
+
+The reliance on reported collisions introduces potential biases:
+
+- **Severity Bias**: More severe collisions are more likely to be reported, skewing the data toward higher severity incidents.
+- **Geographic Bias**: Differences in reporting rates across neighborhoods may reflect socioeconomic disparities rather than actual differences in collision frequencies.
+
+#### Non-Response and Missing Data
+
+- **Incomplete Records**: Some collision reports lack complete information on variables like road conditions or driver actions.
+- **Impact on Analysis**: Missing data can lead to biased estimates if the missingness is not completely random.
+
+#### External Validity
+
+- **Generalizability**: Findings may not be generalizable to other cities or regions due to unique characteristics of Toronto's infrastructure, traffic laws, and demographics.
+- **Temporal Changes**: Changes over time in vehicle technology or urban development may affect collision patterns beyond the factors included in the model.
+
+### Simulation Study: Assessing the Impact of Under-Reporting
+
+#### Objective
+
+To evaluate how different levels of under-reporting of minor collisions might affect the model estimates and conclusions, we conducted a simulation study.
+
+#### Methodology
+
+- **Simulation Setup**: We assumed that a certain percentage of minor collisions are unreported and simulated datasets reflecting various under-reporting rates (e.g., 10%, 20%, 30%).
+- **Data Adjustment**: For each scenario, we randomly removed the corresponding percentage of minor collisions from the dataset.
+- **Model Re-Estimation**: The Negative Binomial regression model was re-estimated using each adjusted dataset.
+- **Comparison Metrics**: Changes in key coefficient estimates, standard errors, and model fit statistics were compared across scenarios.
+
+#### Results
+
+- **Coefficient Stability**: The coefficients for `OCC_YEAR` and `PostVisionZero` remained statistically significant across scenarios, but their magnitudes varied slightly.
+- **Impact on Collision Severity Rates**: The coefficients for `InjuryRate` and `FatalityRate` became less stable as under-reporting increased, highlighting sensitivity to data completeness.
+- **Model Fit**: Overall model fit, as measured by AIC and pseudo R-squared, deteriorated with higher under-reporting rates.
+
+#### Interpretation
+
+- **Robustness of Findings**: The primary findings regarding the temporal trend and the impact of Vision Zero remain robust under reasonable levels of under-reporting.
+- **Vulnerability to Data Quality**: The analysis of collision severity rates is more susceptible to biases introduced by under-reporting.
+
+## Linkages to Literature
+
+### Comparative Studies on Data Limitations
+
+- **Under-Reporting in Traffic Collision Data**: Studies such as Elvik and Mysen (1999) [@elvik1999] have highlighted the prevalence of under-reporting in traffic collision data and its implications for road safety analysis.
+- **Adjusting for Under-Reporting**: Methods to adjust for under-reporting, including capture-recapture techniques and the use of supplementary data sources, have been proposed in the literature (Hauer & Hakkert, 1988) [@hauer1988].
+
+### Methodological Approaches
+
+- **Use of Hospital and Insurance Data**: Integrating data from hospitals and insurance companies can improve the completeness of collision data (Alsop & Langley, 2001) [@alsop2001].
+- **Spatial Autocorrelation**: Recognizing spatial dependencies in collision data, researchers have employed spatial econometric models to account for autocorrelation (Anselin et al., 2000) [@anselin2000].
+
+## Detailed Model Information
+
+### Model Specification
+
+#### Negative Binomial Regression Model
+
+The Negative Binomial regression model accounts for overdispersion in count data by introducing an unobserved heterogeneity term.
+
+- **Probability Distribution**:
+
+  \[
+  $P(Y_{it} = y) = \frac{\Gamma(y + \alpha^{-1})}{\Gamma(\alpha^{-1}) y!} \left( \frac{\alpha^{-1}}{\alpha^{-1} + \mu_{it}} \right)^{\alpha^{-1}} \left( \frac{\mu_{it}}{\alpha^{-1} + \mu_{it}} \right)^y$
+  \]
+
+  where \( \Gamma \) is the gamma function, \( \mu_{it} \) is the expected collision count, and \( \alpha \) is the dispersion parameter.
+
+- **Link Function**:
+
+  \[
+  $\log(\mu_{it}) = \beta_0 + \beta_1 \text{Year}_t + \beta_2 \text{PostVisionZero}_t + \beta_3 \text{Neighborhood}_i + \beta_4 \text{InjuryRate}_{it} + \beta_5 \text{FatalityRate}_{it}$
+  \]
+
+#### Estimation Method
+
+- **Maximum Likelihood Estimation**: Parameters were estimated using maximum likelihood methods implemented in the `glm.nb()` function from the **MASS** package.
+- **Dispersion Parameter**: The dispersion parameter \( \alpha \) was estimated iteratively to maximize the likelihood function.
+
+### Diagnostics and Model Checks
+
+#### Goodness-of-Fit Tests
+
+- **Likelihood Ratio Test**: Compared the Negative Binomial model to the Poisson model, confirming that the Negative Binomial model provides a significantly better fit.
+- **Overdispersion Test**: The dispersion parameter was significantly greater than zero, justifying the use of the Negative Binomial model.
+
+#### Residual Analysis
+
+- **Deviance Residuals**: Plotted deviance residuals against fitted values to check for patterns.
+- **Quantile-Quantile Plot**: Assessed the normality of residuals; slight deviations were observed, which are typical in count data models.
+
+#### Alternative Models Considered
+
+- **Zero-Inflated Models**: Zero-Inflated Negative Binomial (ZINB) models were considered but not selected due to the low number of zero collision counts in the data.
+- **Spatial Models**: Spatial autocorrelation tests (e.g., Moran's I) indicated potential spatial dependencies. However, incorporating spatial lag models was beyond the scope of this study.
+
+## Proposed Enhanced Data Collection Strategy
+
+### Idealized Methodology with a $100,000 Budget
+
+#### Objectives
+
+- **Improve Data Completeness**: Capture unreported collisions and near-misses to enhance the dataset.
+- **Enhance Data Accuracy**: Reduce measurement errors and improve the precision of collision location data.
+
+#### Sampling Approach
+
+- **Mixed-Methods Data Collection**:
+
+  - **Public Survey**: Conduct a city-wide survey to collect data on unreported collisions and near-misses.
+    - **Recruitment**: Use stratified random sampling to select participants across different neighborhoods and demographics.
+    - **Survey Administration**: Deploy both online and mail-in surveys to maximize reach.
+    - **Questionnaire Design**: Develop a concise questionnaire focusing on collision experiences, reporting behaviors, and perceptions of road safety.
+
+  - **Mobile Application**: Develop a user-friendly app for real-time reporting of collisions and near-misses.
+    - **Features**: GPS location tracking, incident details input, optional photo uploads.
+    - **Data Validation**: Implement validation checks to ensure data accuracy (e.g., mandatory fields, geolocation verification).
+
+#### Data Validation and Quality Control
+
+- **Data Cleaning Procedures**: Establish protocols for handling incomplete or inconsistent data from surveys and app reports.
+- **Cross-Referencing**: Compare self-reported data with official records to assess reporting gaps and validate information.
+- **Training for Data Collectors**: Provide training for personnel involved in data collection and entry to minimize errors.
+
+#### Ethical Considerations
+
+- **Informed Consent**: Ensure participants understand the purpose of the data collection and consent to their data being used for research.
+- **Data Privacy**: Implement measures to protect personal information, including data encryption and anonymization.
+
+#### Expected Outcomes
+
+- **Enhanced Dataset**: A more comprehensive dataset capturing a wider range of collision incidents.
+- **Improved Analysis**: Ability to analyze factors influencing both reported and unreported collisions, leading to more effective policy recommendations.
+
+## Survey Instrument
+
+### Sample Survey Questions
+
+1. **Collision Experience**:
+   - Have you been involved in a traffic collision in Toronto between 2014 and 2021?
+     - [ ] Yes
+     - [ ] No
+   - If yes, how many times?
+     - [ ] 1
+     - [ ] 2–3
+     - [ ] More than 3
+2. **Collision Reporting**:
+   - Did you report all the collisions to the authorities?
+     - [ ] Yes
+     - [ ] No
+   - If no, please specify the reasons for not reporting (select all that apply):
+     - [ ] Minor damage
+     - [ ] No injuries
+     - [ ] Time constraints
+     - [ ] Lack of trust in authorities
+     - [ ] Other (please specify): ________
+3. **Near-Miss Incidents**:
+   - Have you experienced near-miss incidents while driving, cycling, or walking?
+     - [ ] Yes
+     - [ ] No
+   - How frequently do these occur?
+     - [ ] Daily
+     - [ ] Weekly
+     - [ ] Monthly
+     - [ ] Rarely
+4. **Perceptions of Road Safety**:
+   - On a scale of 1 to 5, how safe do you feel on Toronto's roads?
+     - [ ] 1 (Not safe)
+     - [ ] 2
+     - [ ] 3
+     - [ ] 4
+     - [ ] 5 (Very safe)
+5. **Awareness of Vision Zero**:
+   - Are you aware of the Vision Zero Road Safety Plan implemented in Toronto?
+     - [ ] Yes
+     - [ ] No
+
+### Survey Implementation
+
+- **Platform**: The survey would be implemented using an online platform such as Google Forms, with a link provided to participants.
+- **Distribution**: Invitations to participate would be distributed via email, social media, community organizations, and local events.
+- **Budget Allocation**: Funds would be allocated for survey design, distribution, incentives for participants, data management, and analysis.
+
+## Conclusion of the Appendix
+
+This appendix has provided an in-depth exploration of the data collection methodologies, limitations of observational data, and proposed enhancements to data gathering processes related to traffic collisions in Toronto. By understanding the strengths and weaknesses of the existing data and proposing strategies to address gaps, we aim to contribute to more accurate analyses and effective policy interventions in road safety.
 
 
 
