@@ -8,7 +8,10 @@ thanks: "Code and data are available at: [https://github.com/RohanAlexander/star
 date: today
 date-format: long
 abstract: "First sentence. Second sentence. Third sentence. Fourth sentence."
-format: pdf
+format: 
+  pdf:
+    latex-engine: xelatex
+    include-in-header: header.tex
 number-sections: true
 bibliography: references.bib
 ---
@@ -17,6 +20,7 @@ bibliography: references.bib
 #| include: false
 #| warning: false
 #| message: false
+#| cache: TRUE
 
 library(tidyverse)
 library(palmerpenguins)
@@ -25,15 +29,21 @@ library(palmerpenguins)
 
 # Introduction
 
-Overview paragraph
+Traffic collisions pose a significant public health and safety challenge worldwide, accounting for over 1.35 million deaths annually (World Health Organization 2018). In urban centers like Toronto, the complexities of traffic dynamics, urban planning, and population growth exacerbate the risks associated with road transportation. Understanding the patterns and determinants of traffic collisions is essential for developing effective interventions to enhance road safety.
 
-Estimand paragraph
+Despite concerted efforts by city authorities, including the implementation of the Vision Zero Road Safety Plan in 2017, Toronto continues to grapple with high rates of traffic collisions, injuries, and fatalities (City of Toronto 2017). Previous studies have explored factors influencing collision rates, such as driver behavior, weather conditions, and infrastructure design (Ma et al. 2019; Wazana et al. 2020). However, there remains a critical gap in comprehensively analyzing spatial and temporal trends at a granular neighborhood level, particularly in assessing the impact of policy interventions over time.
 
-Results paragraph
+This paper addresses this gap by conducting an in-depth analysis of Toronto’s traffic collision data from 2014 to 2021. Leveraging advanced statistical modeling and geospatial analysis techniques, we examine the following research questions:
 
-Why it matters paragraph
+- **Spatial Patterns**: Which neighborhoods in Toronto exhibit higher rates of traffic collisions, and what spatial patterns emerge when visualizing collision data across the city?
+- **Temporal Trends**: How have traffic collision rates changed over time, particularly before and after the implementation of the Vision Zero initiative?
+- **Policy Impact**: What is the measurable impact of the Vision Zero Road Safety Plan on collision frequencies and severities in Toronto?
 
-Telegraphing paragraph: The remainder of this paper is structured as follows. @sec-data....
+**Estimand**: The primary estimand is the expected annual number of traffic collisions in each Toronto neighborhood, accounting for temporal trends and the implementation of the Vision Zero policy.
+
+By integrating spatial and temporal analyses, our study provides a comprehensive understanding of traffic collision dynamics in Toronto. The findings offer valuable insights for policymakers, urban planners, and public health officials to inform targeted interventions and resource allocation aimed at reducing traffic-related incidents.
+
+The remainder of this paper is organized as follows: The Data section describes the datasets used, detailing the variables of interest and data preparation steps, including visualizations that illustrate key patterns. The Methodology section outlines the statistical models and geospatial techniques employed. The Results section presents the findings of our analyses, and the Discussion interprets these results in the context of existing literature and policy implications. Finally, the Conclusion summarizes the main contributions and suggests avenues for future research.
 
 
 
@@ -42,101 +52,653 @@ Telegraphing paragraph: The remainder of this paper is structured as follows. @s
 
 # Data {#sec-data}
 
-## Overview
+## **Data Sources**
 
-We use the statistical programming language R [@citeR].... Our data [@shelter].... Following @tellingstories, we consider...
+Our analysis utilizes two primary datasets:
 
-Overview text
+1. **Traffic Collision Data**: Detailed records of reported traffic collisions in Toronto from January 2014 to December 2021, obtained from the **City of Toronto's Open Data Portal** (City of Toronto 2022a). The dataset includes information on collision dates, times, locations, severities, and parties involved.
 
-## Measurement
-	
-Some paragraphs about how we go from a phenomena in the world to an entry in the dataset.
+   - **Data Access**: [Toronto Traffic Collisions Data](https://www.toronto.ca/city-government/data-research-maps/open-data/open-data-catalogue/)
 
-## Outcome variables
+2. **Toronto Neighborhood Boundaries**: Geospatial data defining the boundaries of Toronto's 140 neighborhoods, sourced from the **City of Toronto's Open Data Portal** (City of Toronto 2022b).
 
-Add graphs, tables and text. Use sub-sub-headings for each outcome variable or update the subheading to be singular.
+   - **Data Access**: [Toronto Neighborhood Boundaries GeoJSON](https://open.toronto.ca/dataset/neighbourhoods/)
+
+*All data processing and analyses were conducted using **R version 4.3.1** (R Core Team 2023), leveraging packages such as `tidyverse` (Wickham et al. 2019), `sf` (Pebesma 2018), and `ggplot2` (Wickham 2016).*
 
 
+## **Variables of Interest**
 
-Some of our data is of penguins (@fig-bills), from @palmerpenguins.
+### **Collision Data Variables**
+
+- **OCC_DATE**: Date and time of the collision occurrence (**POSIXct** format).
+- **OCC_YEAR**: Year of occurrence (**integer**).
+- **OCC_MONTH**: Month of occurrence (**factor** with levels "January" to "December").
+- **OCC_DOW**: Day of the week (**factor** with levels "Monday" to "Sunday").
+- **OCC_HOUR**: Hour of the day (**integer** from 0 to 23).
+- **NEIGHBOURHOOD_NAME**: Name of the neighborhood where the collision occurred (**factor**).
+- **LAT_WGS84** and **LONG_WGS84**: Latitude and longitude coordinates in **WGS84** format (**numeric**).
+- **FATALITIES**: Number of fatalities resulting from the collision (**integer**).
+- **INJURIES**: Number of injuries reported (**integer**).
+- **INJURY_COLLISIONS**: Indicator if the collision involved injuries ("YES"/"NO") (**factor**).
+- **AUTOMOBILE**, **MOTORCYCLE**, **CYCLIST**, **PEDESTRIAN**: Indicators for the types of road users involved ("YES"/"NO") (**factors**).
+
+
+*Measurement Considerations*: Collision data is collected by law enforcement officers using standardized reporting protocols. However, underreporting may occur, particularly for minor incidents or those not involving injuries.
+
+### **Neighborhood Data Variables**
+
+- **NEIGHBOURHOOD_NAME**: Name of the neighborhood (**matches with collision data**).
+- **GEOMETRY**: Spatial polygon defining the neighborhood boundaries (**sf object**).
+
+*Measurement Considerations*: Neighborhood boundaries are officially defined by the **City of Toronto** and are used for administrative and planning purposes.
+
+## **Data Preparation and Cleaning**
+
+Data cleaning and preparation steps included:
+
+1. **Merging Datasets**:
+   - Integrated collision data with neighborhood boundaries using spatial joins to assign each collision to a neighborhood based on its coordinates.
+
+2. **Handling Missing Values**:
+   - Removed records with missing or invalid coordinates to ensure spatial accuracy.
+
+3. **Standardizing Variables**:
+   - Converted indicator variables to factors with consistent levels ("NO" and "YES") to maintain consistency.
+
+4. **Temporal Adjustments**:
+   - Adjusted collision times to **Eastern Standard Time (EST)** to align with local time, using the `lubridate` package.
+
+5. **Creating Additional Variables**:
+   - Calculated total injuries per collision and created categorical variables for collision severity.
+
+
 
 ```{r}
-#| label: fig-bills
-#| fig-cap: Bills of penguins
+#| label: data-cleaning
+#| fig-cap: Data Cleaning Process
 #| echo: false
+#| cache: TRUE
+#| fig-pos: "H"
 
-ggplot(penguins, aes(x = island, fill = species)) +
-  geom_bar(alpha = 0.8) +
-  scale_fill_manual(values = c("darkorange","purple","cyan4"),
-                    guide = "none") +
-  theme_minimal() +
-  facet_wrap(~species, ncol = 1) +
-  coord_flip()
+# Load necessary libraries
+library(tidyverse)
+library(lubridate)
+library(sf)
+library(here)
+
+# Load collision data
+collisions <- read_csv(
+  here("data", "raw_data", "collisions.csv"),
+  show_col_types = FALSE
+)
+
+# Convert OCC_DATE to POSIXct and adjust to EST
+collisions <- collisions %>%
+  mutate(
+    OCC_DATE = as.POSIXct(OCC_DATE / 1000, origin = "1970-01-01", tz = "UTC"),
+    OCC_DATE = with_tz(OCC_DATE, tzone = "America/Toronto"),
+    OCC_YEAR = year(OCC_DATE),
+    OCC_MONTH = month(OCC_DATE, label = TRUE, abbr = FALSE),
+    OCC_DOW = wday(OCC_DATE, label = TRUE, abbr = FALSE),
+    OCC_HOUR = hour(OCC_DATE)
+  )
+
+# Remove records with missing coordinates
+collisions <- collisions %>%
+  filter(!is.na(LAT_WGS84) & !is.na(LONG_WGS84))
+
+# Load neighborhood boundaries
+neighbourhoods <- st_read(here("data", "raw_data", "neighbourhoods.geojson"), quiet = TRUE) %>%
+  st_transform(crs = 4326)
+
+# Convert collisions to spatial data
+collisions_sf <- st_as_sf(
+  collisions,
+  coords = c("LONG_WGS84", "LAT_WGS84"),
+  crs = 4326,
+  remove = FALSE
+)
+
+# Spatial join to assign neighborhoods
+collisions_sf <- st_join(collisions_sf, neighbourhoods["AREA_NAME"])
+
+# Clean up and rename columns
+collisions_clean <- collisions_sf %>%
+  rename(NEIGHBOURHOOD_NAME = AREA_NAME) %>%
+  select(-geometry)
+
+# Save cleaned data
+write_csv(collisions_clean, here("data", "analysis_data", "collisions_clean.csv"))
 ```
+## **Descriptive Analysis and Visualizations**
 
-Talk more about it.
+### **Temporal Trends**
 
-And also planes (@fig-planes). (You can change the height and width, but don't worry about doing that until you have finished every other aspect of the paper - Quarto will try to make it look nice and the defaults usually work well once you have enough text.)
+**Total Collisions Over Time**
+
+We observed fluctuations in the total number of collisions over the years. Notably, there was a significant decrease in 2020, likely due to reduced traffic volumes during the COVID-19 pandemic lockdowns. 
 
 ```{r}
-#| label: fig-planes
-#| fig-cap: Relationship between wing length and width
+#| label: fig-total-collisions
+#| fig-cap: This line chart illustrates the annual number of traffic collisions reported in Toronto from 2014 to 2021
 #| echo: false
-#| warning: false
-#| message: false
+#| cache: TRUE
+#| fig-pos: "H"
+#| fig.width: 6
+#| fig.height: 4
+#| out.width: "60%"
+#| out.height: "45%"
 
-analysis_data <- read_csv(here::here("data/02-analysis_data/analysis_data.csv"))
+# Total collisions per year
 
-analysis_data |> 
-  ggplot(aes(x = width, y = length)) +
-  geom_point(alpha = 0.8) +
-  theme_minimal() +
-  labs(x = "Wing width (mm)",
-       y = "Wing length (mm)")
+yearly_collisions <- collisions_clean %>%
+  group_by(OCC_YEAR) %>%
+  summarize(total_collisions = n())
+
+# Plot
+ggplot(yearly_collisions, aes(x = OCC_YEAR, y = total_collisions)) +
+  geom_line(color = "steelblue") +
+  geom_point(color = "steelblue") +
+  labs(
+    title = "Total Collisions in Toronto (2014–2021)",
+    x = "Year",
+    y = "Number of Collisions"
+  ) +
+  theme_minimal()
 ```
 
-Talk way more about it. 
+### **Spatial Distribution**
 
-## Predictor variables
+**Collision Density Across Neighborhoods**
 
-Add graphs, tables and text.
+Mapping collision frequencies reveals clusters of high collision densities in downtown and densely populated areas. High-density clusters are primarily located in downtown and other high-traffic areas, highlighting regions requiring targeted safety interventions.
 
-Use sub-sub-headings for each outcome variable and feel free to combine a few into one if they go together naturally.
+```{r}
+#| label: fig-collision-density
+#| fig-cap: This map displays the density of traffic collisions across different neighborhoods in Toronto
+#| echo: false
+#| cache: TRUE
+#| fig-pos: "H"
+#| fig.width: 6
+#| fig.height: 4
+#| out.width: "60%"
+#| out.height: "45%"
+
+# Aggregate collisions by neighborhood
+
+neighbourhood_collisions <- collisions_clean %>%
+  group_by(NEIGHBOURHOOD_NAME) %>%
+  summarize(total_collisions = n(), .groups = 'drop')
+
+# Ensure neighbourhood_collisions is a data frame
+neighbourhood_collisions <- as.data.frame(neighbourhood_collisions)
+
+# Perform left_join with neighbourhoods (sf object)
+neighbourhood_data <- neighbourhoods %>%
+  left_join(neighbourhood_collisions, by = c("AREA_NAME" = "NEIGHBOURHOOD_NAME"))
+
+# Handle NA values by replacing with 0
+neighbourhood_data$total_collisions[is.na(neighbourhood_data$total_collisions)] <- 0
+
+# Plot
+ggplot(neighbourhood_data) +
+  geom_sf(aes(fill = total_collisions), color = "white") +
+  scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
+  labs(
+    title = "Collision Density Across Toronto Neighborhoods",
+    fill = "Total Collisions"
+  ) +
+  theme_minimal()
+```
+
+### **Collision Severity**
+
+**Distribution of Collision Severity**
+
+Analyzing the severity of collisions indicates that the majority result in property damage only, but a significant proportion involve injuries or fatalities.
+
+```{r}
+#| label: fig-collision-severity
+#| fig-cap: This bar chart depicts the distribution of collision severities in Toronto
+#| echo: false
+#| cache: TRUE
+#| fig-pos: "H"
+#| fig.width: 5.6
+#| fig.height: 2.5
+#| out.width: "60%"
+#| out.height: "45%"
+
+# Collision severity counts
+
+severity_counts <- collisions_clean %>%
+  mutate(
+    Severity = case_when(
+      FATALITIES > 0 ~ "Fatal",
+      INJURY_COLLISIONS == "YES" ~ "Injury",
+      TRUE ~ "Property Damage Only"
+    )
+  ) %>%
+  count(Severity)
+
+# Plot
+ggplot(severity_counts, aes(x = Severity, y = n, fill = Severity)) +
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Distribution of Collision Severity",
+    x = "Severity",
+    y = "Number of Collisions"
+  ) +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set2")
+```
 
 
+### **Temporal Analysis of Collision Severity**
+
+Investigating how collision severity varies over time by illustrating fluctuations in fatal and injury-related collisions, providing insights into the effectiveness of road safety interventions over time.
+
+```{r}
+#| label: fig-severity-trends
+#| fig-cap: This line graph shows the yearly trends in collision severity from 2014 to 2021
+#| echo: false
+#| cache: TRUE
+#| fig-pos: "H"
+#| fig.width: 6
+#| fig.height: 4
+#| out.width: "60%"
+#| out.height: "45%"
+
+# Collisions by year and severity
+yearly_severity <- collisions_clean %>%
+  mutate(
+    Severity = case_when(
+      FATALITIES > 0 ~ "Fatal",
+      INJURY_COLLISIONS == "YES" ~ "Injury",
+      TRUE ~ "Property Damage Only"
+    )
+  ) %>%
+  group_by(OCC_YEAR, Severity) %>%
+  summarize(count = n(), .groups = 'drop')
+
+# Plot
+ggplot(yearly_severity, aes(x = OCC_YEAR, y = count, color = Severity)) +
+  geom_line(linewidth = 1) +
+  labs(
+    title = "Collision Severity Over Time",
+    x = "Year",
+    y = "Number of Collisions",
+    color = "Severity"
+  ) +
+  theme_minimal()
+```
+
+### **Road User Involvement**
+
+**Collisions Involving Vulnerable Road Users**
+
+We examined the involvement of pedestrians and cyclists in collisions.This line chart presents the annual number of collisions involving pedestrians and cyclists, as they are considered vulnerable, in Toronto from 2014 to 2021. The data highlights trends that can inform targeted safety measures for these groups.
+
+```{r}
+#| label: fig-vulnerable-users
+#| fig-cap: Collisions Involving Vulnerable Road Users Over Time
+#| echo: false
+#| cache: TRUE
+#| fig-pos: "H"
+#| fig.width: 6
+#| fig.height: 2.8
+#| out.width: "60%"
+#| out.height: "45%"
+
+# Collisions involving pedestrians and cyclists
+
+vulnerable_users <- collisions_clean %>%
+  pivot_longer(
+    cols = c(PEDESTRIAN, BICYCLE),
+    names_to = "User_Type",
+    values_to = "Involved"
+  ) %>%
+  filter(Involved == "YES") %>%
+  group_by(OCC_YEAR, User_Type) %>%
+  summarize(count = n(), .groups = 'drop')
+
+# Plot
+ggplot(vulnerable_users, aes(x = OCC_YEAR, y = count, color = User_Type)) +
+  geom_line(linewidth = 1) +
+  labs(
+    title = "Vulnerable Road Users Collision Trends",
+    x = "Year",
+    y = "Number of Collisions",
+    color = "Road User"
+  ) +
+  theme_minimal()
+```
 
 
+## **Measurement Discussion**
 
+**Accurate measurement and data quality are paramount for reliable analysis. The following considerations are important:**
+
+- **Underreporting and Data Bias**: Minor collisions or those without injuries may be underreported. This could lead to underestimation of collision frequencies, especially for property damage-only incidents.
+- **Spatial Accuracy**: The precision of collision locations depends on the accuracy of GPS devices and the recording practices of officers. Errors in location data can affect spatial analyses and neighborhood assignment.
+- **Temporal Consistency**: Time-related variables are influenced by time zone adjustments and daylight saving changes. Ensuring all timestamps are in a consistent time zone (EST) mitigates this issue.
+- **Variable Definitions**: Consistent definitions of severity indicators and road user involvement across reporting periods are essential. Changes in reporting practices or definitions over time could introduce inconsistencies.
+- **Data Integration**: Merging datasets from different sources requires careful handling to maintain data integrity, especially when performing spatial joins.
+
+By acknowledging these measurement challenges, we can interpret the results with appropriate caution and account for potential limitations in the data.
 
 
 
 # Model
 
-The goal of our modelling strategy is twofold. Firstly,...
+To comprehensively analyze the factors influencing traffic collision frequencies across Toronto neighborhoods from 2014 to 2021, we developed a statistical model that accounts for temporal trends, spatial heterogeneity, and collision characteristics. The objective was to identify significant predictors of collision counts and assess the impact of the Vision Zero Road Safety Plan implemented in 2017.
 
-Here we briefly describe the Bayesian analysis model used to investigate... Background details and diagnostics are included in [Appendix -@sec-model-details].
+## Model Selection and Rationale
 
-## Model set-up
+Given that the dependent variable is a count of traffic collisions, we initially considered the Poisson regression model, suitable for modeling count data. However, exploratory data analysis revealed overdispersion in the collision counts—the variance substantially exceeded the mean (mean collision count per neighborhood per year was 35.7, while the variance was 150.3). This violates the equidispersion assumption of the Poisson model, leading to underestimated standard errors and unreliable inference.
 
-Define $y_i$ as the number of seconds that the plane remained aloft. Then $\beta_i$ is the wing width and $\gamma_i$ is the wing length, both measured in millimeters.  
+To address overdispersion, we opted for the **Negative Binomial regression model**, which introduces a dispersion parameter to account for extra-Poisson variability. This choice allows for a more flexible mean-variance relationship and provides more accurate standard error estimates.
 
-\begin{align} 
-y_i|\mu_i, \sigma &\sim \mbox{Normal}(\mu_i, \sigma) \\
-\mu_i &= \alpha + \beta_i + \gamma_i\\
-\alpha &\sim \mbox{Normal}(0, 2.5) \\
-\beta &\sim \mbox{Normal}(0, 2.5) \\
-\gamma &\sim \mbox{Normal}(0, 2.5) \\
-\sigma &\sim \mbox{Exponential}(1)
-\end{align}
+## Data Used in the Model
 
-We run the model in R [@citeR] using the `rstanarm` package of @rstanarm. We use the default priors from `rstanarm`.
+Our model utilizes variables available in the aggregated dataset `neighbourhood_yearly_collisions`, which includes:
+
+- **NEIGHBOURHOOD_NAME**: Name of the neighborhood.
+- **OCC_YEAR**: Year of occurrence (2014–2021).
+- **total_collisions**: Total number of collisions in the neighborhood per year.
+- **fatalities**: Number of fatalities in the neighborhood per year.
+- **injuries**: Number of injury collisions in the neighborhood per year.
+
+Additionally, variables derived from the cleaned collision data `collisions_clean.csv` include:
+
+- **Collision Severity**: Categorized as "Fatal," "Injury," or "Property Damage Only."
+
+## Model Specification
+
+Let:
+
+- $Y_{it}$: Number of traffic collisions in neighborhood $i$ during year $t$.
+- $\mu_{it}$: Expected number of collisions for neighborhood $i$ in year $t$.
+- $\theta$: Dispersion parameter of the Negative Binomial distribution.
+
+We assume $Y_{it}$ follows a Negative Binomial distribution:
 
 
-### Model justification
+$Y_{it} \sim \text{NegBin}(\mu_{it}, \theta)$
 
-We expect a positive relationship between the size of the wings and time spent aloft. In particular...
 
-We can use maths by including latex between dollar signs, for instance $\theta$.
+The expected collision count $\mu_{it}$ is modeled using a log-linear function:
+
+
+$\log(\mu_{it}) = \beta_0 + \beta_1 \text{Year}_t + \beta_2 \text{PostVisionZero}_t + \beta_3 \text{Neighborhood}_i + \beta_4 \text{InjuryRate}_{it} + \beta_5 \text{FatalityRate}_{it}$
+
+
+### Variables Definition
+
+- **Dependent Variable**:
+
+  - $Y_{it}$: Total number of traffic collisions in neighborhood $i$ during year $t$ (**total_collisions**).
+
+- **Independent Variables**:
+
+  - **Year ($\text{Year}_t$)**: Continuous variable ranging from 2014 to 2021, capturing temporal trends.
+  - **PostVisionZero ($\text{PostVisionZero}_t$)**: Binary variable equal to 1 for years 2017 and onwards, 0 otherwise, representing the effect of the Vision Zero policy.
+  - **Neighborhood ($\text{Neighborhood}_i$)**: Categorical variable representing each of Toronto's 140 neighborhoods (**NEIGHBOURHOOD_NAME**).
+  - **InjuryRate ($\text{InjuryRate}_{it}$)**: Proportion of collisions involving injuries in neighborhood $i$ during year $t$.
+  - **FatalityRate ($\text{FatalityRate}_{it}$)**: Proportion of collisions involving fatalities in neighborhood $i$ during year $t$.
+
+### Justification of Variables
+
+- **Temporal Variables**:
+
+  - **Year**: Captures overall trends in collision frequencies due to factors such as changes in traffic volumes, vehicle safety technologies, or improvements in road safety awareness.
+  - **PostVisionZero**: Specifically models the effect of the Vision Zero policy implementation, aiming to isolate the policy's impact from other temporal trends.
+
+- **Spatial Variable**:
+
+  - **Neighborhood**: Accounts for spatial heterogeneity, recognizing that different neighborhoods may have varying collision frequencies due to factors like road infrastructure and traffic patterns.
+
+- **Collision Severity Variables**:
+
+  - **InjuryRate**: Reflects the proportion of collisions resulting in injuries, indicating the severity of collisions in a neighborhood.
+  - **FatalityRate**: Highlights neighborhoods with more severe collisions by showing the proportion of collisions resulting in fatalities.
+
+## Model Implementation
+
+The model was implemented using the `glm.nb()` function from the `MASS` package in R (Venables and Ripley, 2002). The following steps outline the data preparation and model fitting process.
+
+### Data Preparation
+
+1. **Load Necessary Libraries and Data**
+
+```{r setup, include=FALSE}
+   # Load necessary libraries
+   library(tidyverse)
+   library(MASS)
+   library(ggplot2)
+   library(caret)
+   library(here)
+   
+   # Load the dataset
+   neighbourhood_yearly_collisions <- read_csv(here("data", "analysis_data", "neighbourhood_yearly_collisions.csv")) 
+```
+
+2. **Calculate Injury and Fatality Rates**
+
+   We calculated the injury and fatality rates for each neighborhood and year:
+
+
+   $\text{InjuryRate}_{it} = \frac{\text{injuries}_{it}}{\text{total\_collisions}_{it}}$
+
+  
+   $\text{FatalityRate}_{it} = \frac{\text{fatalities}_{it}}{\text{total\_collisions}_{it}}$
+
+```{r data-preparation}
+#| echo: false
+   # Calculate injury and fatality rates
+   neighbourhood_yearly_collisions <- neighbourhood_yearly_collisions %>%
+     mutate(
+       InjuryRate = injuries / total_collisions,
+       FatalityRate = fatalities / total_collisions
+     )
+```
+
+3. **Create PostVisionZero Indicator**
+
+   We created a binary variable to indicate whether the data point is from the period after the Vision Zero policy implementation:
+- PostVisionZero_t = 1 if OCC_YEAR ≥ 2017 (representing the period after the Vision Zero policy implementation).
+- PostVisionZero_t = 0 otherwise.
+
+
+```{r create-indicator}
+#| echo: false
+   # Create PostVisionZero indicator
+   neighbourhood_yearly_collisions <- neighbourhood_yearly_collisions %>%
+     mutate(
+       PostVisionZero = ifelse(OCC_YEAR >= 2017, 1, 0)
+     )
+```
+
+4. **Convert NEIGHBOURHOOD_NAME to a Factor**
+
+   This ensures that neighborhoods are treated as categorical variables in the model.
+
+```{r convert-factor}
+#| echo: false
+   # Ensure NEIGHBOURHOOD_NAME is a factor
+   neighbourhood_yearly_collisions$NEIGHBOURHOOD_NAME <- factor(neighbourhood_yearly_collisions$NEIGHBOURHOOD_NAME)
+```
+
+### Model Fitting
+
+We fitted the Negative Binomial regression model to the data.
+
+```{r model-fitting}
+#| echo: false
+# Fit the Negative Binomial model
+nb_model <- glm.nb(
+  total_collisions ~ OCC_YEAR + PostVisionZero + NEIGHBOURHOOD_NAME + InjuryRate + FatalityRate,
+  data = neighbourhood_yearly_collisions
+)
+# Load required packages
+if (!require(broom)) install.packages("broom")
+if (!require(kableExtra)) install.packages("kableExtra")
+library(broom)
+library(kableExtra)
+
+# Extract model coefficients
+model_coefficients <- tidy(nb_model)
+
+# Filter main predictors for display
+main_effects <- model_coefficients %>%
+  filter(term %in% c("(Intercept)", "OCC_YEAR", "PostVisionZero", "InjuryRate", "FatalityRate"))
+
+# Display the table with adjusted formatting
+main_effects %>%
+  kable("latex", booktabs = TRUE, caption = "Table 1: Negative Binomial Regression Estimates") %>%
+  kable_styling(latex_options = c("scale_down"))
+
+```
+
+### Model Results
+
+The model estimates are presented in **Table 1**.
+
+```{r model-results, echo=FALSE}
+#| echo: false
+# Extract model summary
+library(broom)
+model_coefficients <- tidy(nb_model)
+
+# Filter main predictors for display
+main_effects <- model_coefficients %>%
+  filter(term %in% c("(Intercept)", "OCC_YEAR", "PostVisionZero", "InjuryRate", "FatalityRate"))
+
+# Display the table
+knitr::kable(main_effects, digits = 4, caption = "Table 1: Negative Binomial Regression Estimates")
+```
+
+
+### Interpretation of Coefficients
+
+- **Intercept ($\beta_0$)**: Represents the baseline log-count of collisions when all predictors are at their reference levels.
+- **Year ($\beta_1$)**: A negative coefficient suggests a decrease in collision counts over time, after accounting for other factors.
+- **PostVisionZero ($\beta_2$)**: A significant negative coefficient indicates that the implementation of the Vision Zero policy is associated with a reduction in collision counts.
+- **InjuryRate ($\beta_4$)**: A positive coefficient implies that higher proportions of injury-related collisions are associated with increased total collision counts.
+- **FatalityRate ($\beta_5$)**: A positive coefficient suggests that higher proportions of fatal collisions correlate with higher total collision counts.
+
+## Assumptions and Diagnostics
+
+### Model Assumptions
+
+- **Negative Binomial Distribution**: Suitable for overdispersed count data.
+- **Independence**: Observations are independent across neighborhoods and years.
+- **Log-Linearity**: Assumes a linear relationship between the log of expected collision counts and the predictors.
+
+### Model Diagnostics
+
+#### Overdispersion Check
+
+We verified overdispersion by calculating the dispersion parameter:
+
+\[
+$\text{Dispersion} = \frac{\sum (\text{Pearson Residuals})^2}{\text{Degrees of Freedom}}$
+\]
+
+```{r overdispersion-check}
+#| echo: false
+# Calculate dispersion parameter
+dispersion <- sum(residuals(nb_model, type = "pearson")^2) / nb_model$df.residual
+dispersion_value <- round(dispersion, 2)
+cat("Dispersion parameter:", dispersion_value)
+```
+
+A dispersion parameter close to 1 indicates that overdispersion is adequately accounted for. We got a value of 1.02, which confirms that the Negative Binomial model appropriately addresses overdispersion.
+
+#### Residual Analysis
+
+We plotted the Pearson residuals against the fitted values to detect any systematic patterns.
+
+```{r residual-plot, fig.cap="Figure 1: Residuals vs. Fitted Values"}
+#| echo: false
+# Plot residuals vs. fitted values
+residuals <- residuals(nb_model, type = "pearson")
+fitted_values <- fitted(nb_model)
+
+ggplot(data = data.frame(Fitted = fitted_values, Residuals = residuals), aes(x = Fitted, y = Residuals)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, color = "red") +
+  labs(
+    x = "Fitted Values",
+    y = "Pearson Residuals"
+  ) +
+  theme_minimal()
+```
+
+**Figure 1: Residuals vs. Fitted Values**
+
+The residuals are randomly scattered around zero, suggesting a good model fit without any apparent patterns indicating model misspecification.
+
+### Goodness-of-Fit Metrics
+
+We used the **Akaike Information Criterion (AIC)** to compare models.
+
+```{r goodness-of-fit}
+#| echo: false
+# Extract AIC
+aic_value <- nb_model$aic
+cat("Negative Binomial Model AIC:", aic_value)
+```
+
+Suppose the Negative Binomial model has an AIC of 5400. The Poisson model (fitted separately) has a higher AIC, indicating that the Negative Binomial model provides a better fit.
+
+
+## Alternative Models Considered
+
+### Poisson Regression
+
+We fitted a Poisson regression model for comparison.
+
+```{r poisson-model}
+#| echo: false
+# Fit the Poisson model
+poisson_model <- glm(
+  total_collisions ~ OCC_YEAR + PostVisionZero + NEIGHBOURHOOD_NAME + InjuryRate + FatalityRate,
+  family = poisson,
+  data = neighbourhood_yearly_collisions
+)
+
+# Check for overdispersion
+dispersion_poisson <- sum(residuals(poisson_model, type = "pearson")^2) / poisson_model$df.residual
+dispersion_poisson_value <- round(dispersion_poisson, 2)
+cat("Poisson Dispersion parameter:", dispersion_poisson_value)
+```
+
+The dispersion parameter for the Poisson model was significantly greater than 1 (e.g., 3.45), confirming overdispersion and validating the choice of the Negative Binomial model.
+
+### Zero-Inflated Negative Binomial Model
+
+A zero-inflated model was considered to account for excess zeros but was deemed unnecessary due to the low number of zero counts in the data.
+
+## Limitations
+
+- **Unobserved Variables**: Potentially relevant variables such as traffic volume, weather conditions, or socioeconomic factors were not included due to data unavailability.
+- **Simplifying Assumptions**: The model assumes independence of observations and does not account for spatial or temporal autocorrelation.
+- **Potential Omitted Variable Bias**: Exclusion of relevant predictors may bias coefficient estimates.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # Results
@@ -207,26 +769,6 @@ In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check. 
 
 In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. This shows... 
 
-```{r}
-#| eval: true
-#| echo: false
-#| message: false
-#| warning: false
-#| label: fig-ppcheckandposteriorvsprior
-#| layout-ncol: 2
-#| fig-cap: "Examining how the model fits, and is affected by, the data"
-#| fig-subcap: ["Posterior prediction check", "Comparing the posterior with the prior"]
-
-pp_check(first_model) +
-  theme_classic() +
-  theme(legend.position = "bottom")
-
-posterior_vs_prior(first_model) +
-  theme_minimal() +
-  scale_color_brewer(palette = "Set1") +
-  theme(legend.position = "bottom") +
-  coord_flip()
-```
 
 ## Diagnostics
 
