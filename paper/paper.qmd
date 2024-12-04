@@ -385,7 +385,7 @@ ggplot(vulnerable_users, aes(x = OCC_YEAR, y = count, color = User_Type)) +
 
 **Accurate measurement and data quality are paramount for reliable analysis. The following considerations are important:**
 
-- **Underreporting and Data Bias**: Minor collisions or those without injuries may be underreported. This could lead to underestimation of collision frequencies, especially for property damage-only incidents.
+- **Underreporting and Data Bias**: Minor collisions or those without injuries may be underreported. This could lead to underestimation of collision frequencies, especially for property damage-only incidents [@Elvik1999; @Alsop2001].
 - **Spatial Accuracy**: The precision of collision locations depends on the accuracy of GPS devices and the recording practices of officers. Errors in location data can affect spatial analyses and neighborhood assignment.
 - **Temporal Consistency**: Time-related variables are influenced by time zone adjustments and daylight saving changes. Ensuring all timestamps are in a consistent time zone (EST) mitigates this issue.
 - **Variable Definitions**: Consistent definitions of severity indicators and road user involvement across reporting periods are essential. Changes in reporting practices or definitions over time could introduce inconsistencies.
@@ -471,13 +471,14 @@ The expected collision count $\mu_{it}$ is modeled using a log-linear function:
 
 ## Model Implementation
 
-The model was implemented using the `glm.nb()` function from the `MASS` package in R (Venables and Ripley, 2002). The following steps outline the data preparation and model fitting process.
+The model was implemented using the glm.nb() function from the MASS package in R [@MASS].
 
 ### Data Preparation
 
 1. **Load Necessary Libraries and Data**
 
 ```{r setup, include=FALSE}
+#| echo: false
    # Load necessary libraries
    library(tidyverse)
    library(MASS)
@@ -541,9 +542,11 @@ We fitted the Negative Binomial regression model to the data.
 
 ### Model Results
 
-The model estimates are presented in **Table 1**.
+The model estimates are presented in the Table below.
 
 ```{r model-results, echo=FALSE, message=FALSE}
+#| label: tab:model-estimates
+#| echo: false
 #| message: false
 
 library(broom)
@@ -731,9 +734,9 @@ This section presents the findings from the Negative Binomial regression analysi
 
 ## Model Estimates
 
-The estimated coefficients from the Negative Binomial regression model are summarized in **Table 1**.
+The estimated coefficients from the Negative Binomial regression model are summarized in **Table NB**.
 
-**Table 1: Negative Binomial Regression Estimates**
+**Table NB: Negative Binomial Regression Estimates**
 
 | Predictor        | Estimate   | Std. Error | z-value    | p-value   |
 |------------------|------------|------------|------------|-----------|
@@ -771,9 +774,10 @@ The Negative Binomial model has an AIC of **19,150.24**. A lower AIC value sugge
 
 ## Residual Analysis
 
-To assess the model fit, we conducted a residual analysis by plotting the Pearson residuals against the fitted values (Figure 1).
+To assess the model fit, we conducted a residual analysis by plotting the Pearson residuals against the fitted values  @ref(tab:residual-plot-1).
 
 ```{r residual-plot-2, fig.cap="Residuals vs. Fitted Values", echo=FALSE}
+#| label: tab:residual-plot-1
 # Plot residuals vs. fitted values
 residuals <- residuals(nb_model, type = "pearson")
 fitted_values <- fitted(nb_model)
@@ -836,7 +840,7 @@ knitr::kable(cv_results, caption = "Table 2: Cross-Validation Performance Metric
 
 # Discussion
 
-This study aimed to identify significant predictors of traffic collision counts across Toronto neighborhoods from 2014 to 2021 and assess the impact of the Vision Zero Road Safety Plan implemented in 2017. The Negative Binomial regression model was employed due to overdispersion in the collision count data, providing more reliable estimates than the Poisson model.
+This study aimed to identify significant predictors of traffic collision counts across Toronto neighborhoods from 2014 to 2021 and assess the impact of the Vision Zero Road Safety Plan implemented in 2017. The Negative Binomial regression model was employed due to overdispersion in the collision count data, providing more reliable estimates than the Poisson model[@Hilbe2011].
 
 ## Interpretation of Findings
 
