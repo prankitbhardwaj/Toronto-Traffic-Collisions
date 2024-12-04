@@ -38,9 +38,9 @@ library(broom)
 
 # Introduction
 
-Traffic collisions pose a significant public health and safety challenge worldwide, accounting for over 1.35 million deaths annually (World Health Organization 2018). In urban centers like Toronto, the complexities of traffic dynamics, urban planning, and population growth exacerbate the risks associated with road transportation. Understanding the patterns and determinants of traffic collisions is essential for developing effective interventions to enhance road safety.
+Traffic collisions pose a significant public health and safety challenge worldwide, accounting for over 1.35 million deaths annually [@WHO2018]. In urban centers like Toronto, the complexities of traffic dynamics, urban planning, and population growth exacerbate the risks associated with road transportation. Understanding the patterns and determinants of traffic collisions is essential for developing effective interventions to enhance road safety.
 
-Despite concerted efforts by city authorities, including the implementation of the Vision Zero Road Safety Plan in 2017, Toronto continues to grapple with high rates of traffic collisions, injuries, and fatalities (City of Toronto 2017). Previous studies have explored factors influencing collision rates, such as driver behavior, weather conditions, and infrastructure design (Ma et al. 2019; Wazana et al. 2020). However, there remains a critical gap in comprehensively analyzing spatial and temporal trends at a granular neighborhood level, particularly in assessing the impact of policy interventions over time.
+Despite concerted efforts by city authorities, including the implementation of the Vision Zero Road Safety Plan in 2017, Toronto continues to grapple with high rates of traffic collisions, injuries, and fatalities [@CityOfToronto2017]. Previous studies have explored factors influencing collision rates, such as driver behavior, weather conditions, and infrastructure design [@Ma2019; @Wazana2020].. However, there remains a critical gap in comprehensively analyzing spatial and temporal trends at a granular neighborhood level, particularly in assessing the impact of policy interventions over time.
 
 This paper addresses this gap by conducting an in-depth analysis of Toronto’s traffic collision data from 2014 to 2021. Leveraging advanced statistical modeling and geospatial analysis techniques, we examine the following research questions:
 
@@ -69,7 +69,7 @@ Our analysis utilizes two primary datasets:
 
    - **Data Access**: [Toronto Neighborhood Boundaries GeoJSON](https://open.toronto.ca/dataset/neighbourhoods/)
 
-*All data processing and analyses were conducted using **R version 4.3.1** (R Core Team 2023), leveraging packages such as `tidyverse` (Wickham et al. 2019), `sf` (Pebesma 2018), and `ggplot2` (Wickham 2016).*
+*All data processing and analyses were conducted using **R version 4.3.1** [@R-base], leveraging packages such as tidyverse [@tidyverse], sf [@sf], and ggplot2 [@ggplot2]*
 
 
 ## **Variables of Interest**
