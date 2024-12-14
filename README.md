@@ -54,7 +54,9 @@ This repository contains all the files, data, and scripts associated with the an
 - **Render the Paper**:
 After running the above scripts, render the paper:   
 
-quarto render paper/paper.qmd
+   ```r
+   quarto render paper/paper.qmd
+   ```
 
 The final paper.pdf will contain the complete analysis, results, and discussion.
    
