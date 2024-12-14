@@ -46,10 +46,10 @@ This repository contains all the files, data, and scripts associated with the an
    install.packages(c("tidyverse","MASS","ggplot2","caret","broom","kableExtra","here","sf","lubridate"))
    ```
 - **Run Scripts in Order**:
-	•	scripts/download_data.R: Downloads raw data into data/raw/.
-	•	scripts/clean_data.R: Cleans raw data, producing data/processed/collisions_clean.csv.
-	•	scripts/exploratory_data_analysis.R: Performs EDA and saves plots in results/plots/.
-	•	scripts/model_data.R: Fits the Negative Binomial model, saves it as nb_model.rds, and generates predictions in results/model_predictions/.
+	- **scripts/download_data.R**: Downloads raw data into data/raw/.
+  	- **scripts/clean_data.R**: Cleans raw data, producing data/processed/collisions_clean.csv.
+	- **scripts/exploratory_data_analysis.R**: Performs EDA and saves plots in results/plots/.
+	- **scripts/model_data.R**: Fits the Negative Binomial model, saves it as nb_model.rds, and generates predictions in results/model_predictions/.
 
 - **Render the Paper**:
 After running the above scripts, render the paper:   
