@@ -1,8 +1,8 @@
 #### Preamble ####
-# Purpose: Perform statistical modeling on the aggregated Toronto traffic collisions data.
-# Author: [Your Name]
-# Date: [Current Date]
-# Contact: [Your Email]
+# Purpose: Downloads and saves the data from Opendata Toronto
+# Author: Prankit Bhardwaj
+# Date: 28 November 2024
+# Contact: prankit.bhardwaj@mail.utoronto.ca
 # License: MIT
 # Pre-requisites:
 # - The `tidyverse`, `MASS`, `ggplot2`, `plotly`, and `here` packages must be installed.
@@ -211,6 +211,48 @@ ggsave(
   height = 6
 )
 
+yearly_collisions_total <- neighbourhood_yearly_collisions %>%
+  group_by(OCC_YEAR) %>%
+  summarize(total_collisions = sum(total_collisions), .groups = 'drop')
+
+city_nb_model <- glm.nb(
+  total_collisions ~ OCC_YEAR,
+  data = yearly_collisions_total
+)
+
+summary(city_nb_model)
+
+# Create a grid of years for prediction
+prediction_years <- data.frame(
+  OCC_YEAR = seq(min(yearly_collisions_total$OCC_YEAR), max(yearly_collisions_total$OCC_YEAR), by = 1)
+)
+
+# Predict total collisions city-wide
+prediction_years$predicted_collisions <- predict(city_nb_model, newdata = prediction_years, type = "response")
+
+ggplot(prediction_years, aes(x = OCC_YEAR, y = predicted_collisions)) +
+  geom_line(color = "blue") +
+  labs(
+    title = "Predicted Total Collisions Over Time (City-Wide)",
+    x = "Year",
+    y = "Predicted Number of Collisions"
+  ) +
+  theme_minimal()
+
+actual_vs_predicted_city <- yearly_collisions_total %>%
+  left_join(prediction_years, by = "OCC_YEAR")
+
+ggplot(actual_vs_predicted_city, aes(x = OCC_YEAR)) +
+  geom_line(aes(y = total_collisions, color = "Actual Collisions"), size = 1) +
+  geom_line(aes(y = predicted_collisions, color = "Predicted Collisions"), linetype = "dashed", size = 1) +
+  labs(
+    title = "Actual vs Predicted Total Collisions (City-Wide)",
+    x = "Year",
+    y = "Number of Collisions",
+    color = "Legend"
+  ) +
+  scale_color_manual(values = c("Actual Collisions" = "blue", "Predicted Collisions" = "red")) +
+  theme_minimal()
 #### Notes ####
 
 # You can loop over multiple neighbourhoods to create actual vs predicted plots for each one.
@@ -221,3 +263,4 @@ ggsave(
 # }
 
 #### End of Script ####
+

@@ -1,8 +1,8 @@
 #### Preamble ####
-# Purpose: Perform exploratory data analysis on the cleaned Toronto traffic collisions data.
-# Author: [Your Name]
-# Date: [Current Date]
-# Contact: [Your Email]
+# Purpose: Downloads and saves the data from Opendata Toronto
+# Author: Prankit Bhardwaj
+# Date: 28 November 2024
+# Contact: prankit.bhardwaj@mail.utoronto.ca
 # License: MIT
 # Pre-requisites:
 # - The `tidyverse`, `lubridate`, `sf`, `ggplot2`, and `here` packages must be installed.
@@ -138,3 +138,4 @@ ggsave(
 )
 
 #### End of Script ####
+

@@ -1,12 +1,10 @@
-# clean_data.R
-
 #### Preamble ####
 # Purpose: Cleans the raw traffic collision data recorded by the Toronto Police Service.
 # Author: Rohan Alexander
 # Date: 6 April 2023
 # Contact: rohan.alexander@utoronto.ca
 # License: MIT
-# Pre-requisites: The `tidyverse`, `lubridate`, `sf`, and `here` packages must be installed.
+# Pre-requisites: The `tidyverse`, `lubridate`, `sf`, `here`, and `arrow` packages must be installed.
 # Any other information needed? Ensure you are in the project root directory.
 
 #### Workspace setup ####
@@ -16,6 +14,7 @@ library(tidyverse)
 library(lubridate)
 library(sf)
 library(here)
+library(arrow)
 
 # Set file paths using 'here' for consistency
 collisions_csv <- here("data", "raw_data", "collisions.csv")
@@ -99,7 +98,7 @@ if (length(missing_cols) > 0) {
   stop(paste("The following indicator columns are missing in collisions data:", paste(missing_cols, collapse = ", ")))
 }
 
-# Standardize values to "NO" and "YES" BEFORE converting to factors
+# Standardize values to "NO" and "YES"
 collisions <- collisions %>%
   mutate(across(all_of(indicator_cols), ~ case_when(
     toupper(.x) == "YES" ~ "YES",
@@ -114,7 +113,7 @@ for (col in indicator_cols) {
   cat("\n")
 }
 
-# Convert indicator variables to factors with levels "NO" and "YES" AFTER standardization
+# Convert indicator variables to factors with levels "NO" and "YES"
 collisions <- collisions %>%
   mutate(across(all_of(indicator_cols), ~ factor(.x, levels = c("NO", "YES"))))
 
@@ -155,8 +154,9 @@ if (!dir.exists(here("data", "analysis_data"))) {
   dir.create(here("data", "analysis_data"), recursive = TRUE)
 }
 
-# Save cleaned collisions data
+# Save cleaned collisions data as CSV and Parquet
 write_csv(collisions, here("data", "analysis_data", "collisions_clean.csv"))
+write_parquet(collisions, here("data", "analysis_data", "collisions_clean.parquet"))
 
 # Save cleaned neighbourhoods data
 if (exists("neighbourhoods")) {
@@ -168,4 +168,4 @@ if (exists("neighbourhoods")) {
 }
 
 # Print message
-message("Data cleaning completed successfully.")
+message("Data cleaning completed successfully, and cleaned data saved as CSV and Parquet.")

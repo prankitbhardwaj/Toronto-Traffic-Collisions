@@ -4,8 +4,6 @@
 # Date: 28 November 2024
 # Contact: prankit.bhardwaj@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: [...UPDATE THIS...]
-# Any other information needed? [...UPDATE THIS...]
 
 
 #### Workspace setup ####
