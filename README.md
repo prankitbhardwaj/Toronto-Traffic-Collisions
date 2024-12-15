@@ -93,3 +93,4 @@ This project is licensed under the [MIT License](LICENSE).
 ---
 
 **Note**: This README provides an overview of the project's purpose, structure, and resources. It replaces the placeholder content from the starter folder and includes all relevant information specific to this project.
+**Note**: The dataset contain an aggregate of over 800,000 entries so the rendering time might be a bit longer than expected.
