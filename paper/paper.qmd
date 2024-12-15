@@ -3,9 +3,8 @@ title: "Assessing the Impact of Vision Zero on Traffic Collisions in Toronto Nei
 subtitle: "An Unexpected Increase Following Policy Implementation"
 author: 
   - Prankit Bhardwaj
-  - Another author
 thanks: "Code and data are available at: [https://github.com/prankitbhardwaj/Toronto-Traffic-Collisions]"
-date: 3/12/2024
+date: 12/3/2024
 date-format: long
 abstract: "This study analyzes traffic collision data from Toronto neighborhoods between 2014 and 2021 to evaluate factors influencing collision frequencies, with a focus on the impact of the Vision Zero Road Safety Plan implemented in 2017. Using a Negative Binomial regression model to account for overdispersion in count data, we found that while collision counts decreased annually over the study period, there was a significant increase in collisions following the implementation of Vision Zero. This unexpected result suggests that the policy has not yet achieved its intended effect of reducing traffic collisions. These findings highlight the need for a critical reassessment of road safety strategies and underscore the complexity of factors affecting traffic collisions in urban environments."
 format: 
@@ -34,13 +33,14 @@ library(ggplot2)
 library(caret)
 library(here)
 library(broom) 
+library(palmerpenguins)
 ```
 
 # Introduction
 
-Traffic collisions pose a significant public health and safety challenge worldwide, accounting for over 1.35 million deaths annually [@WHO2018]. In urban centers like Toronto, the complexities of traffic dynamics, urban planning, and population growth exacerbate the risks associated with road transportation. Understanding the patterns and determinants of traffic collisions is essential for developing effective interventions to enhance road safety.
+Traffic collisions pose a significant public health and safety challenge worldwide, accounting for over 1.35 million deaths annually [@WHO2018]. In major urban centers like Toronto, the complexities of increasing population density, complex transportation networks, and rapid urban development exacerbate the risks associated with road transportation. Understanding the spatial distribution and temporal progression of these collisions is critical for identifying risk factors and implementing interventions that enhance road safety.
 
-Despite concerted efforts by city authorities, including the implementation of the Vision Zero Road Safety Plan in 2017, Toronto continues to grapple with high rates of traffic collisions, injuries, and fatalities [@CityOfToronto2017]. Previous studies have explored factors influencing collision rates, such as driver behavior, weather conditions, and infrastructure design [@Ma2019; @Wazana2020].. However, there remains a critical gap in comprehensively analyzing spatial and temporal trends at a granular neighborhood level, particularly in assessing the impact of policy interventions over time.
+Toronto’s policy environment provides a unique case for examining changes in collision dynamics over time. In 2017, the city launched the Vision Zero Road Safety Plan, aiming to eliminate traffic fatalities and serious injuries. Although various measures—ranging from infrastructure upgrades to public awareness campaigns—have been introduced, Toronto still experiences high rates of collisions, injuries, and fatalities [@CityOfToronto2017]. Previous research has explored influences on collision rates, including driver behavior, weather conditions, and roadway design [@Ma2019; @Wazana2020]. However, these analyses often do not delve into the granular neighborhood level or systematically assess how policy interventions affect localized patterns over time, leaving a critical gap in our understanding of Vision Zero’s impact at a fine spatial scale.
 
 This paper addresses this gap by conducting an in-depth analysis of Toronto’s traffic collision data from 2014 to 2021. Leveraging advanced statistical modeling and geospatial analysis techniques, we examine the following research questions:
 
@@ -61,11 +61,11 @@ The remainder of this paper is organized as follows: The Data section describes 
 
 Our analysis utilizes two primary datasets:
 
-1. **Traffic Collision Data**: Detailed records of reported traffic collisions in Toronto from January 2014 to December 2021, obtained from the **City of Toronto's Open Data Portal** (City of Toronto 2022a). The dataset includes information on collision dates, times, locations, severities, and parties involved.
+1. **Traffic Collision Data**: Detailed records of reported traffic collisions in Toronto from January 2014 to December 2021, obtained from the **City of Toronto’s Open Data Portal** (City of Toronto 2022a). This dataset is produced by the Toronto Police Service for annual statistical reporting and public transparency, making it a comprehensive and official source for understanding collision occurrences. While other datasets (e.g., national databases, insurance claim records, or community-reported incidents) could potentially offer additional insights, these alternatives often lack detailed spatial resolution, consistent reporting standards, or the necessary temporal coverage that the Toronto dataset provides.
 
    - **Data Access**: [Toronto Traffic Collisions Data](https://open.toronto.ca/dataset/police-annual-statistical-report-traffic-collisions/)
 
-2. **Toronto Neighborhood Boundaries**: Geospatial data defining the boundaries of Toronto's 140 neighborhoods, sourced from the **City of Toronto's Open Data Portal** (City of Toronto 2022b).
+2. **Toronto Neighborhood Boundaries**: Geospatial data defining the boundaries of Toronto's 140 neighborhoods, sourced from the **City of Toronto's Open Data Portal** (City of Toronto 2022b). These boundaries are used administratively and are stable over time, allowing for longitudinal neighborhood-level analysis.
 
    - **Data Access**: [Toronto Neighborhood Boundaries GeoJSON](https://open.toronto.ca/dataset/neighbourhoods/)
 
@@ -85,8 +85,8 @@ Our analysis utilizes two primary datasets:
 - **LAT_WGS84** and **LONG_WGS84**: Latitude and longitude coordinates in **WGS84** format (**numeric**).
 - **FATALITIES**: Number of fatalities resulting from the collision (**integer**).
 - **INJURIES**: Number of injuries reported (**integer**).
-- **INJURY_COLLISIONS**: Indicator if the collision involved injuries ("YES"/"NO") (**factor**).
-- **AUTOMOBILE**, **MOTORCYCLE**, **CYCLIST**, **PEDESTRIAN**: Indicators for the types of road users involved ("YES"/"NO") (**factors**).
+- **INJURY_COLLISIONS**: Indicator if the collision involved injuries, providing a quick severity check ("YES"/"NO") (**factor**).
+- **AUTOMOBILE**, **MOTORCYCLE**, **CYCLIST**, **PEDESTRIAN**: Indicators for the types of road users involved ("YES"/"NO") (**factors**). “YES” indicates that at least one party of that type was involved.
 
 
 *Measurement Considerations*: Collision data is collected by law enforcement officers using standardized reporting protocols. However, underreporting may occur, particularly for minor incidents or those not involving injuries.
@@ -94,7 +94,7 @@ Our analysis utilizes two primary datasets:
 ### **Neighborhood Data Variables**
 
 - **NEIGHBOURHOOD_NAME**: Name of the neighborhood (**matches with collision data**).
-- **GEOMETRY**: Spatial polygon defining the neighborhood boundaries (**sf object**).
+- **GEOMETRY**: Spatial polygon that defines the neighborhood’s boundaries. These boundaries facilitate stable geographic comparisons over time (**sf object**).
 
 *Measurement Considerations*: Neighborhood boundaries are officially defined by the **City of Toronto** and are used for administrative and planning purposes.
 
@@ -103,7 +103,7 @@ Our analysis utilizes two primary datasets:
 Data cleaning and preparation steps included:
 
 1. **Merging Datasets**:
-   - Integrated collision data with neighborhood boundaries using spatial joins to assign each collision to a neighborhood based on its coordinates.
+   - Used a spatial join to assign collisions to neighborhoods. This step leverages the GEOMETRY of neighborhoods and the LAT/LONG of collisions.
 
 2. **Handling Missing Values**:
    - Removed records with missing or invalid coordinates to ensure spatial accuracy.
@@ -123,10 +123,11 @@ Data cleaning and preparation steps included:
 #| label: data-cleaning
 #| fig-cap: Data Cleaning Process
 #| echo: false
+#| message: false
+#| warning: false
 #| cache: TRUE
 #| fig-pos: "H"
 
-# Load necessary libraries
 library(tidyverse)
 library(lubridate)
 library(sf)
@@ -138,7 +139,7 @@ collisions <- read_csv(
   show_col_types = FALSE
 )
 
-# Convert OCC_DATE to POSIXct and adjust to EST
+# Convert OCC_DATE and filter missing coords
 collisions <- collisions %>%
   mutate(
     OCC_DATE = as.POSIXct(OCC_DATE / 1000, origin = "1970-01-01", tz = "UTC"),
@@ -147,47 +148,68 @@ collisions <- collisions %>%
     OCC_MONTH = month(OCC_DATE, label = TRUE, abbr = FALSE),
     OCC_DOW = wday(OCC_DATE, label = TRUE, abbr = FALSE),
     OCC_HOUR = hour(OCC_DATE)
-  )
-
-# Remove records with missing coordinates
-collisions <- collisions %>%
+  ) %>%
   filter(!is.na(LAT_WGS84) & !is.na(LONG_WGS84))
 
 # Load neighborhood boundaries
 neighbourhoods <- st_read(here("data", "raw_data", "neighbourhoods.geojson"), quiet = TRUE) %>%
   st_transform(crs = 4326)
 
-# Convert collisions to spatial data
+# Spatial join
 collisions_sf <- st_as_sf(
   collisions,
   coords = c("LONG_WGS84", "LAT_WGS84"),
   crs = 4326,
   remove = FALSE
-)
+) %>%
+  st_join(neighbourhoods["AREA_NAME"])
 
-# Spatial join to assign neighborhoods
-collisions_sf <- st_join(collisions_sf, neighbourhoods["AREA_NAME"])
-
-# Clean up and rename columns
 collisions_clean <- collisions_sf %>%
   rename(NEIGHBOURHOOD_NAME = AREA_NAME) %>%
-  select(-geometry)
+  dplyr::select(-geometry)
 
 # Save cleaned data
 write_csv(collisions_clean, here("data", "analysis_data", "collisions_clean.csv"))
 ```
 
+## **Summary Statistics**
+
+The table below provides a high-level snapshot of the dataset’s scale, temporal coverage, and spatial coverage. It illustrates the number of records, average fatalities per collision, the earliest and latest years of data, and how many neighborhoods are represented.
+
+```{r}
+#| label: tab:summary-statistics
+#| fig-cap: Summary Statistics
+#| echo: false
+#| message: false
+#| warning: false
+#| cache: TRUE
+#| fig-pos: "H"
+summary_stats <- collisions_clean %>%
+  summarize(
+    tot_recs = n(),
+    avg_fat = mean(FATALITIES, na.rm = TRUE),
+    min_y = min(OCC_YEAR),
+    max_y = max(OCC_YEAR),
+    unique_neigh = n_distinct(NEIGHBOURHOOD_NAME)
+  )
+
+knitr::kable(summary_stats, caption = "Summary Statistics of Key Variables", booktabs = TRUE) %>%
+  kableExtra::kable_styling(latex_options = c("hold_position"))
+```
+
 ## **Descriptive Analysis and Visualizations**
+
+Below, we present a selection of visualizations to better understand distributions and patterns in the data. We focus on temporal patterns, spatial distributions, severity breakdowns, and involvement of vulnerable road users. While we refrain from interpretive explanations here, these visuals lay the foundation for insights discussed later.
+
+\newpage
 
 ### **Temporal Trends**
 
 **Total Collisions Over Time**
 
-We observed fluctuations in the total number of collisions over the years. Notably, there was a significant decrease in 2020, likely due to reduced traffic volumes during the COVID-19 pandemic lockdowns. 
-
 ```{r}
 #| label: fig-total-collisions
-#| fig-cap: This line chart illustrates the annual number of traffic collisions reported in Toronto from 2014 to 2021
+#| fig-cap: Annual number of traffic collisions reported in Toronto from 2014 to 2021
 #| echo: false
 #| cache: TRUE
 #| fig-pos: "H"
@@ -218,11 +240,9 @@ ggplot(yearly_collisions, aes(x = OCC_YEAR, y = total_collisions)) +
 
 **Collision Density Across Neighborhoods**
 
-Mapping collision frequencies reveals clusters of high collision densities in downtown and densely populated areas. High-density clusters are primarily located in downtown and other high-traffic areas, highlighting regions requiring targeted safety interventions.
-
 ```{r}
 #| label: fig-collision-density
-#| fig-cap: This map displays the density of traffic collisions across different neighborhoods in Toronto
+#| fig-cap: Map displaying total collisions per neighborhoods in Toronto
 #| echo: false
 #| cache: TRUE
 #| fig-pos: "H"
@@ -258,15 +278,15 @@ ggplot(neighbourhood_data) +
   theme_minimal()
 ```
 
+\newpage
+
 ### **Collision Severity**
 
 **Distribution of Collision Severity**
 
-Analyzing the severity of collisions indicates that the majority result in property damage only, but a significant proportion involve injuries or fatalities.
-
 ```{r}
 #| label: fig-collision-severity
-#| fig-cap: This bar chart depicts the distribution of collision severities in Toronto
+#| fig-cap: Bar chart of collision severities in Toronto
 #| echo: false
 #| cache: TRUE
 #| fig-pos: "H"
@@ -302,11 +322,9 @@ ggplot(severity_counts, aes(x = Severity, y = n, fill = Severity)) +
 
 ### **Temporal Analysis of Collision Severity**
 
-Investigating how collision severity varies over time by illustrating fluctuations in fatal and injury-related collisions, providing insights into the effectiveness of road safety interventions over time.
-
 ```{r}
 #| label: fig-severity-trends
-#| fig-cap: This line graph shows the yearly trends in collision severity from 2014 to 2021
+#| fig-cap: Yearly trends in collision severity(2014-2021)
 #| echo: false
 #| cache: TRUE
 #| fig-pos: "H"
@@ -339,15 +357,15 @@ ggplot(yearly_severity, aes(x = OCC_YEAR, y = count, color = Severity)) +
   theme_minimal()
 ```
 
+\newpage
+
 ### **Road User Involvement**
 
 **Collisions Involving Vulnerable Road Users**
 
-We examined the involvement of pedestrians and cyclists in collisions.This line chart presents the annual number of collisions involving pedestrians and cyclists, as they are considered vulnerable, in Toronto from 2014 to 2021. The data highlights trends that can inform targeted safety measures for these groups.
-
 ```{r}
 #| label: fig-vulnerable-users
-#| fig-cap: Collisions Involving Vulnerable Road Users Over Time
+#| fig-cap: Annual Collisions Involving Vulnerable Road Users Over Time
 #| echo: false
 #| cache: TRUE
 #| fig-pos: "H"
@@ -544,10 +562,11 @@ We fitted the Negative Binomial regression model to the data.
 
 The model estimates are presented in the Table below.
 
-```{r model-results, echo=FALSE, message=FALSE}
-#| label: tab:model-estimates
+```{r model-results}
+#| label: model-estimates
 #| echo: false
 #| message: false
+#| warning: false
 
 library(broom)
 library(knitr)
@@ -617,6 +636,7 @@ We plotted the Pearson residuals against the fitted values to detect any systema
 
 ```{r residual-plot, fig.cap="Residuals vs. Fitted Values"}
 #| echo: false
+
 # Plot residuals vs. fitted values
 residuals <- residuals(nb_model, type = "pearson")
 fitted_values <- fitted(nb_model)
@@ -655,17 +675,24 @@ The Poisson model (fitted separately) has a higher AIC, 19150.24 specifically, i
 We performed 5-fold cross-validation to evaluate the model's predictive performance.
 
 ```{r cross-validation}
+#| cache: true
+#| echo: false
+#| message: false
+#| warning: false 
+
 # Set up cross-validation
 set.seed(42)
 
 # Remove rows with missing values
 neighbourhood_yearly_collisions <- na.omit(neighbourhood_yearly_collisions)
 
-train_control <- trainControl(method = "cv", number = 5)
+train_control <- trainControl(method = "cv", number = 5, savePredictions = "final")
 
 
 # Define the model formula
 model_formula <- total_collisions ~ OCC_YEAR + PostVisionZero + NEIGHBOURHOOD_NAME + InjuryRate + FatalityRate
+neighbourhood_yearly_collisions$NEIGHBOURHOOD_NAME <- droplevels(neighbourhood_yearly_collisions$NEIGHBOURHOOD_NAME)
+
 
 # Perform cross-validation
 cv_model <- train(
@@ -679,7 +706,7 @@ cv_model <- train(
 cv_results <- cv_model$results
 ```
 
-The cross-validation results are summarized in **Table 2**.
+The cross-validation results are summarized in **Table 3**.
 
 ```{r cv-results-1, echo=FALSE}
 # Display cross-validation metrics
@@ -689,7 +716,6 @@ knitr::kable(cv_results, digits = 4, caption = "Cross-Validation Performance Met
 ### Predictive Accuracy
 
 The model demonstrated good predictive accuracy, with low RMSE and MAE values, indicating that predictions are close to observed collision counts.
-
 
 
 ## Alternative Models Considered
@@ -734,9 +760,10 @@ This section presents the findings from the Negative Binomial regression analysi
 
 ## Model Estimates
 
-The estimated coefficients from the Negative Binomial regression model are summarized in **Table NB**.
+The Negative Binomial model estimates are summarized below. This model includes year effects, a post-policy indicator (PostVisionZero), and severity-related rates. Neighborhood-specific effects are also included but not displayed here for brevity.
 
 **Table NB: Negative Binomial Regression Estimates**
+
 
 | Predictor        | Estimate   | Std. Error | z-value    | p-value   |
 |------------------|------------|------------|------------|-----------|
@@ -760,6 +787,33 @@ The estimated coefficients from the Negative Binomial regression model are summa
 
 - **FatalityRate**: The coefficient for `FatalityRate` is -3.1283 (p = 0.1655), also not statistically significant. This indicates that the proportion of collisions involving fatalities does not significantly affect the total collision counts in the model.
 
+### Coefficient Plot
+
+The coefficient plot below shows point estimates and confidence intervals for the main predictors of interest, providing a visual representation of their direction and uncertainty.
+
+```{r}
+#| fig.cap: "Negative Binomial Model"
+#| echo: false
+#| message: false
+#| warning: false
+#| fig.width: 4
+#| fig.height: 3.5
+#| out.width: "45%"
+#| out.height: "45%"
+#| fig-align: "center"
+
+coef_data <- broom::tidy(nb_model) %>%
+  filter(term %in% c("OCC_YEAR","PostVisionZero","InjuryRate","FatalityRate"))
+
+ggplot(coef_data, aes(x = term, y = estimate, ymin = estimate - 1.96*std.error, ymax = estimate + 1.96*std.error)) +
+  geom_pointrange() +
+  coord_flip() +
+  labs(x = "Predictor",
+       y = "Estimate (with 95% CI)") +
+  theme_minimal()
+```
+
+
 ## Model Fit and Diagnostics
 
 ### Dispersion Parameter
@@ -774,10 +828,18 @@ The Negative Binomial model has an AIC of **19,150.24**. A lower AIC value sugge
 
 ## Residual Analysis
 
-To assess the model fit, we conducted a residual analysis by plotting the Pearson residuals against the fitted values  @ref(tab:residual-plot-1).
+To assess the model fit, we conducted a residual analysis by plotting the Pearson residuals against the fitted values, plot belo.
 
-```{r residual-plot-2, fig.cap="Residuals vs. Fitted Values", echo=FALSE}
-#| label: tab:residual-plot-1
+```{r}
+#| label: fig:residual-fitted-plot
+#| echo: false
+#| fig-cap: "Residuals vs. Fitted Values"
+#| fig.width: 6
+#| fig.height: 4
+#| out.width: "60%"
+#| out.height: "60%"
+#| fig-align: "center"
+
 # Plot residuals vs. fitted values
 residuals <- residuals(nb_model, type = "pearson")
 fitted_values <- fitted(nb_model)
@@ -792,6 +854,8 @@ ggplot(data = data.frame(Fitted = fitted_values, Residuals = residuals), aes(x =
   theme_minimal()
 ```
 
+\newpage
+
 - **Scatter of Residuals**:
   - The residuals appear to be randomly scattered around the horizontal line at zero. This is a good indication that the model does not have systematic biases and captures the underlying pattern in the data effectively.
 - **Lack of Patterns**:
@@ -805,7 +869,7 @@ ggplot(data = data.frame(Fitted = fitted_values, Residuals = residuals), aes(x =
 
 ## Cross-Validation Performance
 
-We performed 5-fold cross-validation to evaluate the predictive performance of the model. The results are summarized in **Table 2**.
+We performed 5-fold cross-validation to evaluate the predictive performance of the model. The results are summarized in **Table 5**.
 
 ```{r cv-results, echo=FALSE}
 # Display cross-validation metrics
@@ -815,10 +879,10 @@ cv_results <- data.frame(
   R2 = round(cv_model$results$Rsquared, 4)
 )
 
-knitr::kable(cv_results, caption = "Table 2: Cross-Validation Performance Metrics")
+knitr::kable(cv_results, caption = "Cross-Validation Performance Metrics")
 ```
 
-**Table 2: Cross-Validation Performance Metrics**
+**Table 6: Cross-Validation Performance Metrics**
 
 |   RMSE |    MAE |     R2 |
 |-------:|-------:|-------:|
@@ -868,7 +932,7 @@ The coefficients for `InjuryRate` (0.3075, *p* = 0.0718) and `FatalityRate` (-3.
 
 The Negative Binomial model demonstrated good predictive performance, as indicated by the cross-validation metrics. The average Root Mean Squared Error (RMSE) across the folds was approximately 90.3647, and the Mean Absolute Error (MAE) was around 60.6441. The R-squared values were high, averaging 0.8682, indicating that the model explains approximately 86.82% of the variability in collision counts.
 
-**Table 2: Cross-Validation Performance Metrics**
+**Table 7: Cross-Validation Performance Metrics**
 
 | Fold |    RMSE |     MAE |     R²  |
 |------|---------|---------|---------|
